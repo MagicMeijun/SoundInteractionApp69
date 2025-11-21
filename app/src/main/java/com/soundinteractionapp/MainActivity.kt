@@ -4,60 +4,55 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import com.soundinteractionapp.ui.theme.SoundInteractionAppTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.soundinteractionapp.ui.theme.SoundInteractionAppTheme
-import androidx.compose.ui.platform.LocalContext // 預覽時用於 SoundManager
-import com.soundinteractionapp.Screen
-
-// 確保所有 AppComponents 和 GameComponents 中的 Composable 函數都被導入
+// 導入所有跨檔案 Composable
 import com.soundinteractionapp.WelcomeScreenContent
-import com.soundinteractionapp.AppModeButton
 import com.soundinteractionapp.FreePlayScreenContent
 import com.soundinteractionapp.GameModeScreenContent
-import com.soundinteractionapp.Level1FollowBeatScreen
-import com.soundinteractionapp.Level2FindAnimalScreen
-import com.soundinteractionapp.Level3PitchHighLowScreen
-import com.soundinteractionapp.Level4ComposeTuneScreen
+import com.soundinteractionapp.CatInteractionScreen
 
 
 
 class MainActivity : ComponentActivity() {
-    // 實例化 SoundManager，並將 Activity Context 傳遞給它
-    private val soundManager = SoundManager(this)
+
+    // 延遲初始化 SoundManager，確保在 onDestroy 時可以釋放資源
+    private lateinit var soundManager: SoundManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 設定全螢幕模式
+        // 啟用全螢幕模式
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
 
+        // 初始化 SoundManager
+        // 由於 SoundManager 需要 Context，我們在 onCreate 這裡初始化它
+        soundManager = SoundManager(this)
+
         setContent {
             SoundInteractionAppTheme {
-                // 【導航控制器】
+
                 val navController = rememberNavController()
 
-                // 【NavHost 負責畫面切換】
+                // 確保 SoundManager 在 Composable 作用域結束時釋放資源
+                DisposableEffect(Unit) {
+                    onDispose {
+                        soundManager.release()
+                    }
+                }
+
                 NavHost(navController = navController, startDestination = Screen.Welcome.route) {
 
                     // 1. 歡迎畫面
                     composable(Screen.Welcome.route) {
-                        WelcomeScreen(
+                        WelcomeScreenContent(
                             onNavigateToFreePlay = {
                                 navController.navigate(Screen.FreePlay.route)
                             },
@@ -70,28 +65,30 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 2. 自由探索模式畫面
+                    // 2. 自由探索模式畫面 (傳遞 SoundManager 和 CatInteraction 導航)
                     composable(Screen.FreePlay.route) {
-                        FreePlayScreen(
+                        FreePlayScreenContent(
                             onNavigateBack = {
                                 navController.popBackStack()
                             },
-                            soundManager = soundManager // 傳遞 SoundManager 實例
-                        )
-                    }
-
-                    // 3. 放鬆模式畫面
-                    composable(Screen.Relax.route) {
-                        RelaxScreen(
-                            onNavigateBack = {
-                                navController.popBackStack()
+                            soundManager = soundManager,
+                            onNavigateToCatInteraction = { // 傳遞導航到貓咪畫面
+                                navController.navigate(Screen.CatInteraction.route)
                             }
                         )
                     }
 
-                    // 4. 遊戲訓練模式 (關卡選擇) 畫面
+                    // 3. 放鬆模式畫面 (使用 Placeholder)
+                    composable(Screen.Relax.route) {
+                        GameLevelPlaceholderScreen(
+                            title = "放鬆模式",
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    // 4. 遊戲訓練模式畫面
                     composable(Screen.Game.route) {
-                        GameModeScreen(
+                        GameModeScreenContent(
                             onNavigateBack = {
                                 navController.popBackStack()
                             },
@@ -101,97 +98,40 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 新增：四個獨立的遊戲關卡畫面 (傳遞 SoundManager)
+                    // 5. 貓咪互動畫面 (新增)
+                    composable(Screen.CatInteraction.route) {
+                        CatInteractionScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            },
+                            soundManager = soundManager
+                        )
+                    }
+
+                    // 6. 四個關卡畫面 (使用 Level Composable)
                     composable(Screen.GameLevel1.route) {
-                        Level1FollowBeatScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        Level1FollowBeatScreen(onNavigateBack = { navController.popBackStack() })
                     }
                     composable(Screen.GameLevel2.route) {
-                        Level2FindAnimalScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        Level2FindAnimalScreen(onNavigateBack = { navController.popBackStack() })
                     }
                     composable(Screen.GameLevel3.route) {
-                        Level3PitchHighLowScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        Level3PitchScreen(onNavigateBack = { navController.popBackStack() })
                     }
                     composable(Screen.GameLevel4.route) {
-                        Level4ComposeTuneScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        Level4CompositionScreen(onNavigateBack = { navController.popBackStack() })
                     }
                 }
             }
         }
     }
 
-    // 確保在 Activity 銷毀時釋放 MediaPlayer 資源
+    // 額外確保 Activity 被銷毀時 SoundManager 釋放資源 (系統級別保障)
     override fun onDestroy() {
         super.onDestroy()
-        soundManager.release()
-    }
-}
-
-// =======================================================
-// 主畫面 Composable 骨架 (從 AppComponents/GameComponents 引入內容)
-// =======================================================
-
-@Composable
-fun WelcomeScreen(
-    onNavigateToFreePlay: () -> Unit,
-    onNavigateToRelax: () -> Unit,
-    onNavigateToGame: () -> Unit
-) {
-    // 這裡直接調用 AppComponents 裡的內容
-    WelcomeScreenContent(
-        onNavigateToFreePlay = onNavigateToFreePlay,
-        onNavigateToRelax = onNavigateToRelax,
-        onNavigateToGame = onNavigateToGame
-    )
-}
-
-@Composable
-fun FreePlayScreen(onNavigateBack: () -> Unit, soundManager: SoundManager) {
-    // 這裡直接調用 GameComponents 裡的內容
-    FreePlayScreenContent(onNavigateBack = onNavigateBack, soundManager = soundManager)
-}
-
-@Composable
-fun GameModeScreen(onNavigateBack: () -> Unit, onNavigateToLevel: (String) -> Unit) {
-    // 這裡直接調用 GameComponents 裡的內容
-    GameModeScreenContent(onNavigateBack = onNavigateBack, onNavigateToLevel = onNavigateToLevel)
-}
-
-@Composable
-fun RelaxScreen(onNavigateBack: () -> Unit) {
-    // 這裡使用簡單的 Box 佈局作為 Placeholder
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("放鬆模式（開發中）", style = MaterialTheme.typography.displayLarge)
-        Button(onClick = onNavigateBack, modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp)) {
-            Text("返回")
+        if (::soundManager.isInitialized) {
+            soundManager.release()
         }
-    }
-}
-
-// 預覽功能 (Preview)
-@Preview(showBackground = true, widthDp = 800, heightDp = 480)
-@Composable
-fun WelcomeScreenPreview() {
-    SoundInteractionAppTheme {
-        WelcomeScreen(
-            onNavigateToFreePlay = {},
-            onNavigateToRelax = {},
-            onNavigateToGame = {}
-        )
-    }
-}
-@Preview(showBackground = true, widthDp = 800, heightDp = 480)
-@Composable
-fun FreePlayScreenPreview() {
-    SoundInteractionAppTheme {
-        // 預覽時傳遞一個假的 SoundManager 實例
-        FreePlayScreen(onNavigateBack = {}, soundManager = SoundManager(LocalContext.current))
-    }
-}
-@Preview(showBackground = true, widthDp = 800, heightDp = 480)
-@Composable
-fun GameModeScreenPreview() {
-    SoundInteractionAppTheme {
-        GameModeScreen(onNavigateBack = {}, onNavigateToLevel = {})
     }
 }
 

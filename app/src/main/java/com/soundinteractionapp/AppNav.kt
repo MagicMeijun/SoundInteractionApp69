@@ -6,6 +6,7 @@ sealed class Screen(val route: String) {
     object Relax : Screen("relax")
     object Game : Screen("game")
     object FreePlay : Screen("freeplay")
+    object CatInteraction : Screen("interaction/cat") // <-- 貓咪互動畫面路由
     // 四個獨立的遊戲關卡路由
     object GameLevel1 : Screen("game/level1") // 跟著拍拍手
     object GameLevel2 : Screen("game/level2") // 找出小動物
