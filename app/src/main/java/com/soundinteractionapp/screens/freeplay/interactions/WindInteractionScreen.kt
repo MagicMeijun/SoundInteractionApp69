@@ -1,77 +1,153 @@
 package com.soundinteractionapp.screens.freeplay.interactions
 
-import androidx.compose.foundation.Image
+import android.media.MediaPlayer
+import android.net.Uri
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.FrameLayout
+import androidx.annotation.OptIn
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import com.soundinteractionapp.R
 import com.soundinteractionapp.SoundManager
 
-/**
- * 風聲互動畫面 (佔位版本)
- */
+@OptIn(UnstableApi::class)
 @Composable
 fun WindInteractionScreen(
     onNavigateBack: () -> Unit,
     soundManager: SoundManager
 ) {
-    val backgroundResId = R.drawable.catbackground
+    val context = LocalContext.current
 
+    // 狀態：是否正在播放
+    var isPlaying by remember { mutableStateOf(false) }
+
+    // 1. 背景音效 (wind_sound.mp3)
+    val audioPlayer = remember {
+        try {
+            MediaPlayer.create(context, R.raw.wind_sound).apply {
+                isLooping = true
+                setVolume(0.6f, 0.6f)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // 2. 影片播放器 (wind_video.mp4) - 靜音
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            val videoUri = Uri.parse("android.resource://${context.packageName}/${R.raw.wind_video}")
+            setMediaItem(MediaItem.fromUri(videoUri))
+            repeatMode = Player.REPEAT_MODE_ONE
+            volume = 0f // 靜音
+            prepare()
+        }
+    }
+
+    // 生命週期管理
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+            audioPlayer?.release()
+        }
+    }
+
+    // 同步控制
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            exoPlayer.play()
+            audioPlayer?.start()
+        } else {
+            exoPlayer.pause()
+            if (audioPlayer?.isPlaying == true) {
+                audioPlayer.pause()
+            }
+        }
+    }
+
+    // UI
     Box(modifier = Modifier.fillMaxSize()) {
-        // 背景圖片
-        Image(
-            painter = painterResource(id = backgroundResId),
-            contentDescription = "Background",
-            contentScale = ContentScale.Crop,
+
+        // 影片層
+        AndroidView(
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    player = exoPlayer
+                    useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                }
+            },
             modifier = Modifier.fillMaxSize()
         )
 
-        // 中央內容
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        // 互動層
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    if (!isPlaying) {
+                        isPlaying = true
+                    }
+                }
         ) {
-            Text(
-                "💨",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 120.sp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "風聲互動",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                "功能開發中...",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (!isPlaying) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "點擊畫面感受微風",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
         }
 
         // 返回按鈕
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
+                .padding(16.dp)
+                .align(Alignment.TopStart),
+            horizontalArrangement = Arrangement.Start
         ) {
             Button(
                 onClick = onNavigateBack,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.height(50.dp)
             ) {
                 Text("← 返回自由探索", style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+
+        // 暫停按鈕
+        if (isPlaying) {
+            Button(
+                onClick = { isPlaying = false },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(32.dp)
+            ) {
+                Text("暫停風聲")
             }
         }
     }

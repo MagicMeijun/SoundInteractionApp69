@@ -23,6 +23,7 @@ import com.soundinteractionapp.screens.freeplay.interactions.DrumInteractionScre
 import com.soundinteractionapp.screens.freeplay.interactions.BellInteractionScreen
 import com.soundinteractionapp.screens.freeplay.interactions.OceanInteractionScreen // 海浪
 import com.soundinteractionapp.screens.freeplay.interactions.RainInteractionScreen  // 雨聲
+import com.soundinteractionapp.screens.freeplay.interactions.WindInteractionScreen
 
 // 導入遊戲相關畫面
 import com.soundinteractionapp.screens.game.GameModeScreenContent
@@ -91,8 +92,8 @@ class MainActivity : ComponentActivity() {
                             onNavigateToOceanInteraction = { navController.navigate(Screen.OceanInteraction.route) },
 
                             // [雨聲] 新增的參數
-                            onNavigateToRainInteraction = { navController.navigate(Screen.RainInteraction.route) }
-                        )
+                            onNavigateToRainInteraction = { navController.navigate(Screen.RainInteraction.route) },
+                            onNavigateToWindInteraction = { navController.navigate(Screen.WindInteraction.route) }                        )
                     }
 
                     // 放鬆模式 (預設進入海浪，也可改為獨立選單)
@@ -149,7 +150,12 @@ class MainActivity : ComponentActivity() {
                             soundManager = soundManager
                         )
                     }
-
+                    composable(Screen.WindInteraction.route) {
+                        WindInteractionScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            soundManager = soundManager
+                        )
+                    }
                     // ==========================================
                     // 3. 遊戲關卡 (Game Levels)
                     // ==========================================

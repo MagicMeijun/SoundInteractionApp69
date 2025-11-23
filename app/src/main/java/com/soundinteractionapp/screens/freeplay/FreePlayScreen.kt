@@ -22,7 +22,8 @@ fun FreePlayScreenContent(
     onNavigateToDrumInteraction: () -> Unit,
     onNavigateToOceanInteraction: () -> Unit, // 海浪導航參數
     onNavigateToBellInteraction: () -> Unit,
-    onNavigateToRainInteraction: () -> Unit
+    onNavigateToRainInteraction: () -> Unit,
+    onNavigateToWindInteraction: () -> Unit
 ) {
     // 狀態管理：追蹤當前啟動視覺效果的按鈕 ID
     var activeEffectButtonId by remember { mutableStateOf<Int?>(null) }
@@ -92,6 +93,7 @@ fun FreePlayScreenContent(
                                         5 -> onNavigateToRainInteraction()
                                         6 -> onNavigateToBirdInteraction()
                                         7 -> onNavigateToBellInteraction()
+                                        8 -> onNavigateToWindInteraction()
                                         else -> {
                                             // 其他尚未實作的功能，只播放聲音
                                             activeEffectButtonId = buttonId
@@ -134,6 +136,7 @@ fun getSoundInteractionData(id: Int): SoundData {
 
         6 -> SoundData("鳥兒", R.raw.bird_sound, { Text("🐦") })
         7 -> SoundData("鈴鐺", R.raw.desk_bell, { Text("🔔") })
+        8 -> SoundData("微風", R.raw.wind_sound, { Text("🍃") })
 
         else -> SoundData("星星", R.raw.cat_meow, { Text("✨") })
     }
