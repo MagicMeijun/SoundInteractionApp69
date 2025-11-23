@@ -1,4 +1,4 @@
-package com.soundinteractionapp
+package com.soundinteractionapp.screens.freeplay.interactions
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 
 // 確保 R 類別可以被識別
 import com.soundinteractionapp.R
+import com.soundinteractionapp.SoundManager
 
 /**
  * 狗狗互動畫面，包含單一可點擊、會單向連續移動且具有連續動畫的狗狗。

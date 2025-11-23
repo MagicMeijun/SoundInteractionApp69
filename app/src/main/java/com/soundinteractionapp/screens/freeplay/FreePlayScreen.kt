@@ -21,7 +21,8 @@ fun FreePlayScreenContent(
     onNavigateToBirdInteraction: () -> Unit,
     onNavigateToDrumInteraction: () -> Unit,
     onNavigateToOceanInteraction: () -> Unit, // 海浪導航參數
-    onNavigateToBellInteraction: () -> Unit
+    onNavigateToBellInteraction: () -> Unit,
+    onNavigateToRainInteraction: () -> Unit
 ) {
     // 狀態管理：追蹤當前啟動視覺效果的按鈕 ID
     var activeEffectButtonId by remember { mutableStateOf<Int?>(null) }
@@ -88,7 +89,7 @@ fun FreePlayScreenContent(
 
                                         3 -> onNavigateToDogInteraction()
                                         4 -> onNavigateToDrumInteraction()
-                                        // 5 -> 雨聲 (尚未實作)
+                                        5 -> onNavigateToRainInteraction()
                                         6 -> onNavigateToBirdInteraction()
                                         7 -> onNavigateToBellInteraction()
                                         else -> {

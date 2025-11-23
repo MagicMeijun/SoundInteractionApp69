@@ -1,4 +1,4 @@
-package com.soundinteractionapp
+package com.soundinteractionapp.screens.freeplay.interactions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 
 // 確保 R 類別可以被識別
 import com.soundinteractionapp.R
+import com.soundinteractionapp.SoundManager
 
 /**
  * 鋼琴互動畫面，提供 8 個琴鍵用於音階探索。

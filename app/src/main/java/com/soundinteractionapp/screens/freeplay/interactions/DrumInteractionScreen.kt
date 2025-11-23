@@ -1,4 +1,4 @@
-package com.soundinteractionapp
+package com.soundinteractionapp.screens.freeplay.interactions
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.soundinteractionapp.R
+import com.soundinteractionapp.SoundManager
 
 /**
  * 爵士鼓組件數據類別
