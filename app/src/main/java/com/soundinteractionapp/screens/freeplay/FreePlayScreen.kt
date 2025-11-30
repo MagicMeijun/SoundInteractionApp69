@@ -20,12 +20,11 @@ fun FreePlayScreenContent(
     onNavigateToDogInteraction: () -> Unit,
     onNavigateToBirdInteraction: () -> Unit,
     onNavigateToDrumInteraction: () -> Unit,
-    onNavigateToOceanInteraction: () -> Unit, // 海浪導航參數
+    onNavigateToOceanInteraction: () -> Unit,
     onNavigateToBellInteraction: () -> Unit,
     onNavigateToRainInteraction: () -> Unit,
     onNavigateToWindInteraction: () -> Unit
 ) {
-    // 狀態管理：追蹤當前啟動視覺效果的按鈕 ID
     var activeEffectButtonId by remember { mutableStateOf<Int?>(null) }
 
     Surface(
@@ -80,22 +79,21 @@ fun FreePlayScreenContent(
                                 icon = soundData.icon,
                                 isActive = activeEffectButtonId == buttonId,
                                 onClick = {
-                                    // 導航邏輯
+                                    // ✅ 正確的導航邏輯
                                     when (buttonId) {
-                                        0 -> onNavigateToCatInteraction()
-                                        1 -> onNavigateToPianoInteraction()
+                                        0 -> onNavigateToCatInteraction()     // 貓咪
+                                        1 -> onNavigateToDogInteraction()     // 狗狗
+                                        2 -> onNavigateToBirdInteraction()    // 鳥兒
 
-                                        // === [關鍵修改] 讓按鈕 2 跳轉到海浪畫面 ===
-                                        2 -> onNavigateToOceanInteraction()
+                                        3 -> onNavigateToPianoInteraction()   // 鋼琴
+                                        4 -> onNavigateToDrumInteraction()    // 爵士鼓
+                                        5 -> onNavigateToBellInteraction()    // 鈴鐺
 
-                                        3 -> onNavigateToDogInteraction()
-                                        4 -> onNavigateToDrumInteraction()
-                                        5 -> onNavigateToRainInteraction()
-                                        6 -> onNavigateToBirdInteraction()
-                                        7 -> onNavigateToBellInteraction()
-                                        8 -> onNavigateToWindInteraction()
+                                        6 -> onNavigateToRainInteraction()    // 雨聲
+                                        7 -> onNavigateToOceanInteraction()   // 海浪
+                                        8 -> onNavigateToWindInteraction()    // 微風
+
                                         else -> {
-                                            // 其他尚未實作的功能，只播放聲音
                                             activeEffectButtonId = buttonId
                                             soundManager.playSound(soundData.resId)
                                         }
@@ -118,26 +116,24 @@ fun FreePlayScreenContent(
     }
 }
 
-// === [關鍵修改] 更新資料來源，加入 wave_sound ===
 @Composable
 fun getSoundInteractionData(id: Int): SoundData {
     return when (id) {
+        // 第一排：動物
         0 -> SoundData("貓咪", R.raw.cat_meow, { Text("🐾") })
-        1 -> SoundData("鋼琴", R.raw.piano_c1, { Text("🎹") })
+        1 -> SoundData("狗狗", R.raw.dog_barking, { Text("🐕") })
+        2 -> SoundData("鳥兒", R.raw.bird_sound, { Text("🐦") })
 
-        // ID 2: 海浪
-        2 -> SoundData("海浪", R.raw.wave_sound, { Text("🌊") })
-
-        3 -> SoundData("狗狗", R.raw.dog_barking, { Text("🐕") })
+        // 第二排：樂器
+        3 -> SoundData("鋼琴", R.raw.piano_c1, { Text("🎹") })
         4 -> SoundData("爵士鼓", R.raw.drum_cymbal_closed, { Text("🥁") })
+        5 -> SoundData("鈴鐺", R.raw.desk_bell, { Text("🔔") })
 
-        // ID 5: 雨聲 (暫時共用檔案避免紅字)
-        5 -> SoundData("雨聲", R.raw.wave_sound, { Text("🌧️") })
-
-        6 -> SoundData("鳥兒", R.raw.bird_sound, { Text("🐦") })
-        7 -> SoundData("鈴鐺", R.raw.desk_bell, { Text("🔔") })
+        // 第三排：自然
+        6 -> SoundData("雨聲", R.raw.rain_sound, { Text("🌧️") })
+        7 -> SoundData("海浪", R.raw.wave_sound, { Text("🌊") })
         8 -> SoundData("微風", R.raw.wind_sound, { Text("🍃") })
 
-        else -> SoundData("星星", R.raw.cat_meow, { Text("✨") })
+        else -> SoundData("未知", R.raw.cat_meow, { Text("⛔") })
     }
 }

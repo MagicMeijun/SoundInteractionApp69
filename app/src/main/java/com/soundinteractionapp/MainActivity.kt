@@ -21,15 +21,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
         soundManager = SoundManager(this)
 
         setContent {
             SoundInteractionAppTheme {
                 val navController = rememberNavController()
 
-                // 直接從 Welcome 開始（裡面已經有登入頁 + 主畫面切換）
-                val startDestination = Screen.Welcome.route
+                // 從 Splash 畫面開始
+                val startDestination = Screen.Splash.route
 
                 DisposableEffect(Unit) {
                     onDispose { soundManager.release() }
@@ -37,23 +41,28 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = startDestination) {
 
-                    // 主畫面 + 登入頁（已經合併在 WelcomeScreen 裡面了）
+                    // Splash 畫面（淡入淡出動畫）
+                    composable(Screen.Splash.route) {
+                        SplashScreen(navController = navController)
+                    }
+
+                    // Welcome 畫面
                     composable(Screen.Welcome.route) {
                         WelcomeScreen(
                             onNavigateToFreePlay = { navController.navigate(Screen.FreePlay.route) },
                             onNavigateToRelax = { navController.navigate(Screen.Relax.route) },
                             onNavigateToGame = { navController.navigate(Screen.Game.route) },
                             onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                            onLogout = {
-                                // 不需要特別跳轉，WelcomeScreen 內部會自動切回登入頁
-                            }
+                            onLogout = { }
                         )
                     }
 
+                    // 個人資料頁
                     composable(Screen.Profile.route) {
                         ProfileScreen(onNavigateBack = { navController.popBackStack() })
                     }
 
+                    // 自由遊玩頁
                     composable(Screen.FreePlay.route) {
                         FreePlayScreenContent(
                             onNavigateBack = { navController.popBackStack() },
@@ -70,24 +79,50 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // 放鬆模式
                     composable(Screen.Relax.route) {
-                        OceanInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        OceanInteractionScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            soundManager = soundManager
+                        )
                     }
 
+                    // 遊戲模式
                     composable(Screen.Game.route) {
-                        GameModeScreenContent(onNavigateBack = { navController.popBackStack() }, onNavigateToLevel = { navController.navigate(it) })
+                        GameModeScreenContent(
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToLevel = { navController.navigate(it) }
+                        )
                     }
 
                     // 所有互動關卡
-                    composable(Screen.CatInteraction.route) { CatInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.PianoInteraction.route) { PianoInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.DogInteraction.route) { DogInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.BirdInteraction.route) { BirdInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.DrumInteraction.route) { DrumInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.BellInteraction.route) { BellInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.OceanInteraction.route) { OceanInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.RainInteraction.route) { RainInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
-                    composable(Screen.WindInteraction.route) { WindInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
+                    composable(Screen.CatInteraction.route) {
+                        CatInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.PianoInteraction.route) {
+                        PianoInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.DogInteraction.route) {
+                        DogInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.BirdInteraction.route) {
+                        BirdInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.DrumInteraction.route) {
+                        DrumInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.BellInteraction.route) {
+                        BellInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.OceanInteraction.route) {
+                        OceanInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.RainInteraction.route) {
+                        RainInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
+                    composable(Screen.WindInteraction.route) {
+                        WindInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                    }
 
                     // 遊戲關卡
                     composable(Screen.GameLevel1.route) { Level1FollowBeatScreen { navController.popBackStack() } }

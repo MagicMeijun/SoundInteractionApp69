@@ -1,6 +1,7 @@
 package com.soundinteractionapp
 
 sealed class Screen(val route: String) {
+    object Splash : Screen("splash")  // ✅ 新增這行
     object Auth : Screen("auth")
     object Welcome : Screen("welcome")
     object Profile : Screen("profile")
