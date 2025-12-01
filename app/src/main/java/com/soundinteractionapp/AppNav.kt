@@ -1,8 +1,11 @@
 package com.soundinteractionapp
 
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")  // ✅ 新增這行
-    object Auth : Screen("auth")
+    object Splash : Screen("splash")
+    object Auth : Screen("auth")  // 这是你原来的登入欢迎页面（LoginScreen）
+    object Login : Screen("login")  // ✅ 新增：登入表单页面
+    object Register : Screen("register")  // ✅ 新增：注册页面
+    object GameHome : Screen("game_home")
     object Welcome : Screen("welcome")
     object Profile : Screen("profile")
     object FreePlay : Screen("freeplay")

@@ -226,7 +226,13 @@ fun TopInfoBar(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("樂之聲", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673AB7), modifier = Modifier.weight(1f))
+            Text(
+                "樂之聲",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF673AB7),
+                modifier = Modifier.weight(1f)
+            )
 
             Box {
                 Row(
@@ -234,13 +240,26 @@ fun TopInfoBar(
                     modifier = Modifier
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color(0xFFE8EAF6))
-                        .clickable { showDropdownMenu = !showDropdownMenu }
+                        .clickable {
+                            soundManager.play(R.raw.settings) // 🔊 點擊訪客時播放音效
+                            showDropdownMenu = !showDropdownMenu
+                        }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Icon(Icons.Filled.Person, "訪客", tint = Color(0xFF673AB7), modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Filled.Person,
+                        "訪客",
+                        tint = Color(0xFF673AB7),
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(Modifier.width(6.dp))
                     Text("訪客", fontSize = 14.sp, color = Color.Black)
-                    Icon(Icons.Filled.ArrowDropDown, "下拉", tint = Color.Black, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Filled.ArrowDropDown,
+                        "下拉",
+                        tint = Color.Black,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
                 DropdownMenu(
@@ -251,28 +270,41 @@ fun TopInfoBar(
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Person, "個人資料", tint = Color(0xFF673AB7), modifier = Modifier.size(20.dp))
+                                Icon(
+                                    Icons.Filled.Person,
+                                    "個人資料",
+                                    tint = Color(0xFF673AB7),
+                                    modifier = Modifier.size(20.dp)
+                                )
                                 Spacer(Modifier.width(12.dp))
                                 Text("個人資料", fontSize = 14.sp)
                             }
                         },
-                        onClick = { showDropdownMenu = false; onNavigateToProfile() }
+                        onClick = {
+                            soundManager.play(R.raw.settings) // 🔊 點擊個人資料時播放音效
+                            showDropdownMenu = false
+                            onNavigateToProfile()
+                        }
                     )
 
                     Divider(color = Color(0xFFE0E0E0))
 
-                    // 🔥 修改這裡的登出事件
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.ExitToApp, "登出", tint = Color(0xFFE57373), modifier = Modifier.size(20.dp))
+                                Icon(
+                                    Icons.Filled.ExitToApp,
+                                    "登出",
+                                    tint = Color(0xFFE57373),
+                                    modifier = Modifier.size(20.dp)
+                                )
                                 Spacer(Modifier.width(12.dp))
                                 Text("登出", fontSize = 14.sp, color = Color(0xFFE57373))
                             }
                         },
                         onClick = {
                             showDropdownMenu = false
-                            onLogoutStart()  // 🔥 播音效 + 啟動黑屏動畫
+                            onLogoutStart()  // 這裡已經有 cancel 音效了
                         }
                     )
                 }
@@ -293,7 +325,6 @@ fun TopInfoBar(
         }
     }
 }
-
 
 // =====================================================
 // 📌 卡片輪播

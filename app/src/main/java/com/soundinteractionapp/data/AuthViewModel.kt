@@ -1,4 +1,3 @@
-// file: data/AuthViewModel.kt
 package com.soundinteractionapp.data
 
 import androidx.lifecycle.ViewModel
@@ -12,6 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 sealed class AuthState {
+    object Initial : AuthState()  // ✅ 添加 Initial 状态
     object Loading : AuthState()
     object Authenticated : AuthState()
     object Unauthenticated : AuthState()
@@ -42,7 +42,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    // 註冊
+    // ✅ 改进的注册方法 - 返回更详细的错误信息
     fun signUp(email: String, password: String, onComplete: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -52,13 +52,24 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Authenticated
                 onComplete(true, null)
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "註冊失敗")
-                onComplete(false, e.message)
+                val errorMessage = when {
+                    e.message?.contains("email address is already in use") == true ->
+                        "此電子郵件已被註冊"
+                    e.message?.contains("password") == true ->
+                        "密碼格式不正確，至少需要 6 個字元"
+                    e.message?.contains("email") == true ->
+                        "電子郵件格式不正確"
+                    e.message?.contains("network") == true ->
+                        "網路連接失敗，請檢查網路"
+                    else -> e.message ?: "註冊失敗"
+                }
+                _authState.value = AuthState.Error(errorMessage)
+                onComplete(false, errorMessage)
             }
         }
     }
 
-    // 登入
+    // ✅ 改进的登入方法 - 返回更详细的错误信息
     fun signIn(email: String, password: String, onComplete: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -68,8 +79,21 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Authenticated
                 onComplete(true, null)
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "登入失敗")
-                onComplete(false, e.message)
+                val errorMessage = when {
+                    e.message?.contains("no user record") == true ||
+                            e.message?.contains("user not found") == true ->
+                        "此電子郵件尚未註冊"
+                    e.message?.contains("password is invalid") == true ||
+                            e.message?.contains("wrong-password") == true ->
+                        "密碼錯誤"
+                    e.message?.contains("email") == true ->
+                        "電子郵件格式不正確"
+                    e.message?.contains("network") == true ->
+                        "網路連接失敗，請檢查網路"
+                    else -> e.message ?: "登入失敗"
+                }
+                _authState.value = AuthState.Error(errorMessage)
+                onComplete(false, errorMessage)
             }
         }
     }
@@ -84,8 +108,9 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Authenticated
                 onComplete(true, null)
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "訪客登入失敗")
-                onComplete(false, e.message)
+                val errorMessage = e.message ?: "訪客登入失敗"
+                _authState.value = AuthState.Error(errorMessage)
+                onComplete(false, errorMessage)
             }
         }
     }
@@ -95,5 +120,27 @@ class AuthViewModel : ViewModel() {
         auth.signOut()
         _currentUser.value = null
         _authState.value = AuthState.Unauthenticated
+    }
+
+    // ✅ 新增：重置認證狀態（用於清除错误信息）
+    fun resetAuthState() {
+        if (_authState.value is AuthState.Error) {
+            _authState.value = AuthState.Unauthenticated
+        }
+    }
+
+    // ✅ 新增：检查是否已登入
+    fun isLoggedIn(): Boolean {
+        return _currentUser.value != null && auth.currentUser != null
+    }
+
+    // ✅ 新增：获取当前用户邮箱
+    fun getCurrentUserEmail(): String? {
+        return auth.currentUser?.email
+    }
+
+    // ✅ 新增：检查是否为匿名用户
+    fun isAnonymous(): Boolean {
+        return auth.currentUser?.isAnonymous == true
     }
 }
