@@ -17,10 +17,12 @@ import androidx.compose.ui.unit.sp
 
 /**
  * 自由探索模式中的單個聲音互動按鈕。
- * 這是一個公共元件，供其他畫面調用。
  */
 @Composable
 fun RowScope.SoundInteractionButton(
+    // ▼▼▼ 關鍵修改：新增標準 modifier 參數 ▼▼▼
+    modifier: Modifier = Modifier,
+    // ▲▲▲ 關鍵修改：新增標準 modifier 參數 ▲▲▲
     soundName: String,
     icon: @Composable () -> Unit,
     isActive: Boolean,
@@ -38,11 +40,14 @@ fun RowScope.SoundInteractionButton(
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
+        // ▼▼▼ 關鍵修改：整合外部傳入的 modifier ▼▼▼
         modifier = Modifier
-            .weight(1f)
+            .weight(1f) // RowScope 擴充屬性 (必須留著)
             .fillMaxHeight()
             .padding(8.dp)
+            .then(modifier) // 套用外部傳入的 modifier
             .scale(scale.value),
+        // ▲▲▲ 關鍵修改：整合外部傳入的 modifier ▲▲▲
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
         ),
@@ -58,19 +63,19 @@ fun RowScope.SoundInteractionButton(
                 // ⭐ icon 比較小
                 CompositionLocalProvider(
                     LocalTextStyle provides MaterialTheme.typography.displayLarge.copy(
-                        fontSize = 36.sp,      // ← 原本 48.sp，縮小
+                        fontSize = 36.sp,
                         color = Color.White
                     )
                 ) {
                     icon()
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))  // ← 間距縮短
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // ⭐ 字體縮小
                 Text(
                     text = soundName,
-                    style = MaterialTheme.typography.bodyLarge,  // ← 比 headlineSmall 小
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     textAlign = TextAlign.Center
                 )

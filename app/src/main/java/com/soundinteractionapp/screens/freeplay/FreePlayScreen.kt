@@ -15,15 +15,14 @@ import kotlinx.coroutines.delay
 fun FreePlayScreenContent(
     onNavigateBack: () -> Unit,
     soundManager: SoundManager,
+    // 只保留動物和樂器的導航參數
     onNavigateToCatInteraction: () -> Unit,
     onNavigateToPianoInteraction: () -> Unit,
     onNavigateToDogInteraction: () -> Unit,
     onNavigateToBirdInteraction: () -> Unit,
     onNavigateToDrumInteraction: () -> Unit,
-    onNavigateToBellInteraction: () -> Unit,
-    onNavigateToOceanInteraction: () -> Unit,
-    onNavigateToRainInteraction: () -> Unit,
-    onNavigateToWindInteraction: () -> Unit
+    onNavigateToBellInteraction: () -> Unit
+
 ) {
     var activeEffectButtonId by remember { mutableStateOf<Int?>(null) }
 
@@ -53,15 +52,16 @@ fun FreePlayScreenContent(
                 Spacer(modifier = Modifier.width(150.dp))
             }
 
-            // 中間：6 個聲音互動按鈕 (2行 x 3列)
+            // 中間：6 個聲音互動按鈕 (改為 2 排)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 48.dp, vertical = 24.dp),
+                    .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
+                // ✅ 修改：這裡改為 repeat(2)，只顯示前兩排
                 repeat(2) { rowIndex ->
                     Row(
                         modifier = Modifier
@@ -75,6 +75,8 @@ fun FreePlayScreenContent(
                             val soundData = getSoundInteractionData(buttonId)
 
                             SoundInteractionButton(
+                                // ✅ 這裡非常重要：加上 modifier 讓按鈕填滿格子
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
                                 soundName = soundData.name,
                                 icon = soundData.icon,
                                 isActive = activeEffectButtonId == buttonId,
@@ -87,6 +89,8 @@ fun FreePlayScreenContent(
                                         3 -> onNavigateToPianoInteraction()   // 鋼琴
                                         4 -> onNavigateToDrumInteraction()    // 爵士鼓
                                         5 -> onNavigateToBellInteraction()    // 鈴鐺
+
+                                        // ❌ 已移除：6, 7, 8 的跳轉邏輯
 
                                         else -> {
                                             activeEffectButtonId = buttonId
@@ -123,6 +127,8 @@ fun getSoundInteractionData(id: Int): SoundData {
         3 -> SoundData("鋼琴", R.raw.piano_c1, { Text("🎹") })
         4 -> SoundData("爵士鼓", R.raw.drum_cymbal_closed, { Text("🥁") })
         5 -> SoundData("鈴鐺", R.raw.desk_bell, { Text("🔔") })
+
+        // ❌ 已移除：第三排自然聲音 (移至 RelaxScreen)
 
         else -> SoundData("未知", R.raw.cat_meow, { Text("⛔") })
     }

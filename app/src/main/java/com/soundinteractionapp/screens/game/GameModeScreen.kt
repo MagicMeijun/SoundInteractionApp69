@@ -9,7 +9,8 @@ import androidx.compose.ui.unit.dp
 import com.soundinteractionapp.Screen
 
 /**
- * 遊戲訓練模式 (Game Mode) 的 UI 介面內容。 (GameModeScreenContent)
+ * 遊戲訓練模式 (Game Mode) 的 UI 介面內容。
+ * 負責顯示 2x2 的關卡選擇按鈕。
  */
 @Composable
 fun GameModeScreenContent(onNavigateBack: () -> Unit, onNavigateToLevel: (String) -> Unit) {
@@ -87,7 +88,7 @@ fun GameModeScreenContent(onNavigateBack: () -> Unit, onNavigateToLevel: (String
 }
 
 /**
- * 遊戲模式中的單個關卡按鈕 (2x2 網格)。 (GameLevelButton)
+ * 遊戲模式中的單個關卡按鈕 (2x2 網格)。
  */
 @Composable
 fun RowScope.GameLevelButton(levelNumber: Int, levelTitle: String, onClick: () -> Unit) {
@@ -113,52 +114,7 @@ fun RowScope.GameLevelButton(levelNumber: Int, levelTitle: String, onClick: () -
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                // TODO: 加入獎勵徽章圖示或鎖定圖示
             }
         }
     }
-}
-
-// =======================================================
-// 獨立關卡骨架 (Placeholder Screens)
-// =======================================================
-
-/**
- * 遊戲關卡的通用骨架畫面。
- */
-@Composable
-fun GameLevelPlaceholderScreen(title: String, onNavigateBack: () -> Unit) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.secondaryContainer) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(title, style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            Text("關卡邏輯實作中...", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 8.dp))
-            Button(onClick = onNavigateBack, modifier = Modifier.padding(top = 32.dp)) {
-                Text("返回關卡選擇")
-            }
-        }
-    }
-}
-
-@Composable
-fun Level1FollowBeatScreen(onNavigateBack: () -> Unit) {
-    GameLevelPlaceholderScreen(title = "關卡 1: 跟著拍拍手", onNavigateBack = onNavigateBack)
-}
-
-@Composable
-fun Level2FindAnimalScreen(onNavigateBack: () -> Unit) {
-    GameLevelPlaceholderScreen(title = "關卡 2: 找出小動物", onNavigateBack = onNavigateBack)
-}
-
-@Composable
-fun Level3PitchScreen(onNavigateBack: () -> Unit) {
-    GameLevelPlaceholderScreen(title = "關卡 3: 音階高低", onNavigateBack = onNavigateBack)
-}
-
-@Composable
-fun Level4CompositionScreen(onNavigateBack: () -> Unit) {
-    GameLevelPlaceholderScreen(title = "關卡 4: 創作小樂曲", onNavigateBack = onNavigateBack)
 }
