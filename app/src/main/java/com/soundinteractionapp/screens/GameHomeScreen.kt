@@ -386,7 +386,7 @@ fun SwipeableCardCarousel(
 
 
 // =====================================================
-// 🃏 卡片
+// 🃏 卡片（修正點擊邏輯）
 // =====================================================
 @Composable
 fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boolean) {
@@ -442,18 +442,27 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
             Text(mode.subtitle, fontSize = 11.sp, color = mode.color, textAlign = TextAlign.Center)
             Spacer(Modifier.weight(1f))
 
+            // 🔥 只有中間的卡片可以點擊
             Button(
-                onClick = mode.onClick,
-                colors = ButtonDefaults.buttonColors(mode.color),
+                onClick = { if (isCenter) mode.onClick() }, // 只在 isCenter 時執行
+                enabled = isCenter, // 只有中間卡片啟用按鈕
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = mode.color,
+                    disabledContainerColor = mode.color.copy(alpha = 0.5f) // 非中間卡片半透明
+                ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth().height(34.dp)
             ) {
-                Text("進入遊戲", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "進入遊戲",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isCenter) Color.White else Color.White.copy(alpha = 0.6f)
+                )
             }
         }
     }
 }
-
 
 // =====================================================
 data class ModeData(

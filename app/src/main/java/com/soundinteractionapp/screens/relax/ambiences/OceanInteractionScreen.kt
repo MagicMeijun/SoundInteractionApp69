@@ -1,4 +1,4 @@
-package com.soundinteractionapp.screens.freeplay.interactions
+package com.soundinteractionapp.screens.relax.ambiences
 
 import android.media.MediaPlayer
 import android.net.Uri

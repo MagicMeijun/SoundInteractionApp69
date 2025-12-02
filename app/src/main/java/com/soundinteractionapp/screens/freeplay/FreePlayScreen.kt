@@ -20,8 +20,8 @@ fun FreePlayScreenContent(
     onNavigateToDogInteraction: () -> Unit,
     onNavigateToBirdInteraction: () -> Unit,
     onNavigateToDrumInteraction: () -> Unit,
-    onNavigateToOceanInteraction: () -> Unit,
     onNavigateToBellInteraction: () -> Unit,
+    onNavigateToOceanInteraction: () -> Unit,
     onNavigateToRainInteraction: () -> Unit,
     onNavigateToWindInteraction: () -> Unit
 ) {
@@ -53,16 +53,16 @@ fun FreePlayScreenContent(
                 Spacer(modifier = Modifier.width(150.dp))
             }
 
-            // 中間：9 個聲音互動按鈕
+            // 中間：6 個聲音互動按鈕 (2行 x 3列)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(32.dp),
+                    .padding(horizontal = 48.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                repeat(3) { rowIndex ->
+                repeat(2) { rowIndex ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -79,7 +79,6 @@ fun FreePlayScreenContent(
                                 icon = soundData.icon,
                                 isActive = activeEffectButtonId == buttonId,
                                 onClick = {
-                                    // ✅ 正確的導航邏輯
                                     when (buttonId) {
                                         0 -> onNavigateToCatInteraction()     // 貓咪
                                         1 -> onNavigateToDogInteraction()     // 狗狗
@@ -88,10 +87,6 @@ fun FreePlayScreenContent(
                                         3 -> onNavigateToPianoInteraction()   // 鋼琴
                                         4 -> onNavigateToDrumInteraction()    // 爵士鼓
                                         5 -> onNavigateToBellInteraction()    // 鈴鐺
-
-                                        6 -> onNavigateToRainInteraction()    // 雨聲
-                                        7 -> onNavigateToOceanInteraction()   // 海浪
-                                        8 -> onNavigateToWindInteraction()    // 微風
 
                                         else -> {
                                             activeEffectButtonId = buttonId
@@ -128,11 +123,6 @@ fun getSoundInteractionData(id: Int): SoundData {
         3 -> SoundData("鋼琴", R.raw.piano_c1, { Text("🎹") })
         4 -> SoundData("爵士鼓", R.raw.drum_cymbal_closed, { Text("🥁") })
         5 -> SoundData("鈴鐺", R.raw.desk_bell, { Text("🔔") })
-
-        // 第三排：自然
-        6 -> SoundData("雨聲", R.raw.rain_sound, { Text("🌧️") })
-        7 -> SoundData("海浪", R.raw.wave_sound, { Text("🌊") })
-        8 -> SoundData("微風", R.raw.wind_sound, { Text("🍃") })
 
         else -> SoundData("未知", R.raw.cat_meow, { Text("⛔") })
     }

@@ -24,7 +24,7 @@ fun RowScope.SoundInteractionButton(
     soundName: String,
     icon: @Composable () -> Unit,
     isActive: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit = { }
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -54,18 +54,23 @@ fun RowScope.SoundInteractionButton(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                // ⭐ icon 比較小
                 CompositionLocalProvider(
                     LocalTextStyle provides MaterialTheme.typography.displayLarge.copy(
-                        fontSize = 48.sp,
+                        fontSize = 36.sp,      // ← 原本 48.sp，縮小
                         color = Color.White
                     )
                 ) {
                     icon()
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(4.dp))  // ← 間距縮短
+
+                // ⭐ 字體縮小
                 Text(
                     text = soundName,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.bodyLarge,  // ← 比 headlineSmall 小
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     textAlign = TextAlign.Center
                 )

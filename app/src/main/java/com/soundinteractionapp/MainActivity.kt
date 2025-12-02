@@ -14,6 +14,10 @@ import com.soundinteractionapp.screens.profile.ProfileScreen
 import com.soundinteractionapp.components.FreePlayScreenContent
 import com.soundinteractionapp.screens.freeplay.interactions.*
 import com.soundinteractionapp.screens.game.*
+import com.soundinteractionapp.screens.relax.RelaxScreenContent
+import com.soundinteractionapp.screens.relax.ambiences.OceanInteractionScreen
+import com.soundinteractionapp.screens.relax.ambiences.RainInteractionScreen
+import com.soundinteractionapp.screens.relax.ambiences.WindInteractionScreen
 import com.soundinteractionapp.ui.theme.SoundInteractionAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -88,9 +92,12 @@ class MainActivity : ComponentActivity() {
 
                     // 放鬆模式
                     composable(Screen.Relax.route) {
-                        OceanInteractionScreen(
+                        RelaxScreenContent(
                             onNavigateBack = { navController.popBackStack() },
-                            soundManager = soundManager
+                            soundManager = soundManager,
+                            onNavigateToOceanInteraction = { navController.navigate(Screen.OceanInteraction.route) },
+                            onNavigateToRainInteraction = { navController.navigate(Screen.RainInteraction.route) },
+                            onNavigateToWindInteraction = { navController.navigate(Screen.WindInteraction.route) }
                         )
                     }
 
@@ -122,13 +129,22 @@ class MainActivity : ComponentActivity() {
                         BellInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
                     }
                     composable(Screen.OceanInteraction.route) {
-                        OceanInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        OceanInteractionScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            soundManager = soundManager
+                        )
                     }
                     composable(Screen.RainInteraction.route) {
-                        RainInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        RainInteractionScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            soundManager = soundManager
+                        )
                     }
                     composable(Screen.WindInteraction.route) {
-                        WindInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager)
+                        WindInteractionScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            soundManager = soundManager
+                        )
                     }
 
                     // 遊戲關卡
