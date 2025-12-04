@@ -32,7 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset as GeometryOffset
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.soundinteractionapp.R
+import com.soundinteractionapp.data.AuthViewModel
+import com.soundinteractionapp.data.ProfileViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -54,7 +58,6 @@ class SoundManager(context: Context) {
             .setAudioAttributes(audioAttributes)
             .build()
 
-        // 載入音效
         soundMap[R.raw.settings] = soundPool.load(context, R.raw.settings, 1)
         soundMap[R.raw.cancel] = soundPool.load(context, R.raw.cancel, 1)
         soundMap[R.raw.options2] = soundPool.load(context, R.raw.options2, 1)
@@ -71,9 +74,8 @@ class SoundManager(context: Context) {
     }
 }
 
-
 // =====================================================
-// 🏠 主畫面 GameHomeScreen（新增黑屏淡出登出動畫）
+// 🏠 主畫面 GameHomeScreen
 // =====================================================
 @Composable
 fun GameHomeScreen(
@@ -81,28 +83,23 @@ fun GameHomeScreen(
     onNavigateToRelax: () -> Unit,
     onNavigateToGame: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
-
-    // 🎵 初始化音效
     val soundManager = remember { SoundManager(context) }
-
-    // 🔥 黑屏動畫開關
     val isLoggingOut = remember { mutableStateOf(false) }
 
-    // 🔥 黑屏動畫數值
     val blackAlpha by animateFloatAsState(
         targetValue = if (isLoggingOut.value) 1f else 0f,
         animationSpec = tween(700),
         finishedListener = {
             if (isLoggingOut.value) {
-                onLogout() // 🔥 黑屏完成後再登出
+                onLogout()
             }
         }
     )
 
-    // ✨ 畫面銷毀時釋放音效資源
     DisposableEffect(Unit) {
         onDispose { soundManager.release() }
     }
@@ -115,19 +112,16 @@ fun GameHomeScreen(
         ModeData("音樂遊戲", "模式三", Icons.Filled.PlayArrow, Color(0xFFFF9800), onNavigateToGame)
     )
 
-    // =====================================================
-    // 🌈 主要 UI
-    // =====================================================
     Box(modifier = Modifier.fillMaxSize()) {
-
         Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F4F4))) {
             TopInfoBar(
                 soundManager = soundManager,
                 onNavigateToProfile = onNavigateToProfile,
                 onLogoutStart = {
                     soundManager.play(R.raw.cancel)
-                    isLoggingOut.value = true // 🔥 啟動黑屏動畫
-                }
+                    isLoggingOut.value = true
+                },
+                authViewModel = authViewModel
             )
 
             Row(
@@ -136,8 +130,6 @@ fun GameHomeScreen(
                     .padding(horizontal = 60.dp, vertical = 32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-                // 左側 LOGO + 標題
                 Box(
                     modifier = Modifier.weight(1f).padding(end = 40.dp),
                     contentAlignment = Alignment.Center
@@ -149,14 +141,14 @@ fun GameHomeScreen(
                         Image(
                             painter = painterResource(id = R.drawable.icon),
                             contentDescription = "樂之聲 Logo",
-                            modifier = Modifier.size(90.dp) // 已縮小
+                            modifier = Modifier.size(90.dp)
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
                             text = "樂之聲",
-                            fontSize = 40.sp, // 標題縮小
+                            fontSize = 40.sp,
                             fontWeight = FontWeight.Black,
                             style = TextStyle(
                                 brush = Brush.linearGradient(
@@ -185,7 +177,6 @@ fun GameHomeScreen(
                     }
                 }
 
-                // 右側卡片輪播
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     SwipeableCardCarousel(
                         soundManager = soundManager,
@@ -197,9 +188,6 @@ fun GameHomeScreen(
             }
         }
 
-        // =====================================================
-        // 🖤 黑屏淡出動畫層（覆蓋全畫面）
-        // =====================================================
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -209,17 +197,26 @@ fun GameHomeScreen(
     }
 }
 
-
 // =====================================================
-// 🔝 上方資訊欄（包含登出）
+// 🔝 上方資訊欄（顯示真實用戶名和頭像）
 // =====================================================
 @Composable
 fun TopInfoBar(
     soundManager: SoundManager,
     onNavigateToProfile: () -> Unit,
-    onLogoutStart: () -> Unit
+    onLogoutStart: () -> Unit,
+    authViewModel: AuthViewModel,
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
     var showDropdownMenu by remember { mutableStateOf(false) }
+
+    val isAnonymous = authViewModel.isAnonymous()
+    val userProfile by profileViewModel.userProfile.collectAsState()  // ✅ 監聽變化
+
+    // ✅ 每次進入畫面都重新載入資料
+    LaunchedEffect(Unit) {
+        profileViewModel.loadUserProfile()
+    }
 
     Surface(modifier = Modifier.fillMaxWidth(), color = Color.White, shadowElevation = 2.dp) {
         Row(
@@ -241,19 +238,39 @@ fun TopInfoBar(
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color(0xFFE8EAF6))
                         .clickable {
-                            soundManager.play(R.raw.settings) // 🔊 點擊訪客時播放音效
+                            soundManager.play(R.raw.settings)
                             showDropdownMenu = !showDropdownMenu
                         }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Icon(
-                        Icons.Filled.Person,
-                        "訪客",
-                        tint = Color(0xFF673AB7),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    // 顯示用戶頭像
+                    if (!isAnonymous && userProfile.photoUrl.isNotEmpty()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(userProfile.photoUrl),
+                            contentDescription = "頭像",
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Person,
+                            if (isAnonymous) "訪客" else "用戶",
+                            tint = Color(0xFF673AB7),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
                     Spacer(Modifier.width(6.dp))
-                    Text("訪客", fontSize = 14.sp, color = Color.Black)
+
+                    // ✅ 顯示最新的暱稱
+                    Text(
+                        text = if (isAnonymous) "訪客" else userProfile.displayName,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        maxLines = 1
+                    )
+
                     Icon(
                         Icons.Filled.ArrowDropDown,
                         "下拉",
@@ -281,7 +298,7 @@ fun TopInfoBar(
                             }
                         },
                         onClick = {
-                            soundManager.play(R.raw.settings) // 🔊 點擊個人資料時播放音效
+                            soundManager.play(R.raw.settings)
                             showDropdownMenu = false
                             onNavigateToProfile()
                         }
@@ -304,7 +321,7 @@ fun TopInfoBar(
                         },
                         onClick = {
                             showDropdownMenu = false
-                            onLogoutStart()  // 這裡已經有 cancel 音效了
+                            onLogoutStart()
                         }
                     )
                 }
@@ -384,9 +401,8 @@ fun SwipeableCardCarousel(
     }
 }
 
-
 // =====================================================
-// 🃏 卡片（修正點擊邏輯）
+// 🃏 卡片
 // =====================================================
 @Composable
 fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boolean) {
@@ -442,13 +458,12 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
             Text(mode.subtitle, fontSize = 11.sp, color = mode.color, textAlign = TextAlign.Center)
             Spacer(Modifier.weight(1f))
 
-            // 🔥 只有中間的卡片可以點擊
             Button(
-                onClick = { if (isCenter) mode.onClick() }, // 只在 isCenter 時執行
-                enabled = isCenter, // 只有中間卡片啟用按鈕
+                onClick = { if (isCenter) mode.onClick() },
+                enabled = isCenter,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = mode.color,
-                    disabledContainerColor = mode.color.copy(alpha = 0.5f) // 非中間卡片半透明
+                    disabledContainerColor = mode.color.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth().height(34.dp)

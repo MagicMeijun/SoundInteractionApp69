@@ -111,7 +111,7 @@ fun RegisterDialog(
     onDismiss: () -> Unit,
     authViewModel: AuthViewModel
 ) {
-    var email by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf("") }  // ✅ 改為帳號
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -138,11 +138,12 @@ fun RegisterDialog(
                 Text("註冊新帳號", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673AB7))
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // ✅ 帳號輸入（英數混合）
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it; errorMessage = null },
-                    label = { Text("電子郵件") },
-                    leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF673AB7)) },
+                    value = account,
+                    onValueChange = { account = it; errorMessage = null },
+                    label = { Text("帳號（英數混合，至少4字元）") },
+                    leadingIcon = { Icon(Icons.Default.AccountCircle, null, tint = Color(0xFF673AB7)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -183,7 +184,6 @@ fun RegisterDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // 穩定版錯誤訊息（永遠不會出錯）
                 Box(modifier = Modifier.height(40.dp)) {
                     errorMessage?.let {
                         Text(
@@ -210,15 +210,18 @@ fun RegisterDialog(
                     Button(
                         onClick = {
                             when {
-                                email.isBlank() -> errorMessage = "請輸入電子郵件"
-                                !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> errorMessage = "請輸入有效的電子郵件"
+                                account.isBlank() -> errorMessage = "請輸入帳號"
+                                account.length < 4 -> errorMessage = "帳號至少需要4個字元"
+                                !account.any { it.isLetter() } -> errorMessage = "帳號需包含英文字母"
+                                !account.any { it.isDigit() } -> errorMessage = "帳號需包含數字"
+                                !account.all { it.isLetterOrDigit() } -> errorMessage = "帳號只能包含英文和數字"
                                 password.isBlank() -> errorMessage = "請輸入密碼"
                                 password.length < 6 -> errorMessage = "密碼至少需要6個字元"
                                 password != confirmPassword -> errorMessage = "兩次輸入的密碼不一致"
                                 else -> {
                                     isLoading = true
                                     errorMessage = null
-                                    authViewModel.signUp(email, password) { success, err ->
+                                    authViewModel.signUp(account, password) { success, err ->
                                         isLoading = false
                                         if (!success) errorMessage = err ?: "註冊失敗，請稍後再試"
                                         else onDismiss()
@@ -248,7 +251,7 @@ fun LoginDialog(
     onDismiss: () -> Unit,
     authViewModel: AuthViewModel
 ) {
-    var email by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf("") }  // ✅ 改為帳號
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -257,13 +260,12 @@ fun LoginDialog(
     val loginAction = remember {
         {
             when {
-                email.isBlank() -> errorMessage = "請輸入電子郵件"
-                !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> errorMessage = "請輸入有效的電子郵件地址"
+                account.isBlank() -> errorMessage = "請輸入帳號"
                 password.isBlank() -> errorMessage = "請輸入密碼"
                 else -> {
                     isLoading = true
                     errorMessage = null
-                    authViewModel.signIn(email, password) { success, error ->
+                    authViewModel.signIn(account, password) { success, error ->
                         isLoading = false
                         if (!success) {
                             errorMessage = when {
@@ -301,11 +303,12 @@ fun LoginDialog(
                 Text("登入帳號", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673AB7))
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // ✅ 帳號輸入
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it; errorMessage = null },
-                    label = { Text("電子郵件") },
-                    leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF673AB7)) },
+                    value = account,
+                    onValueChange = { account = it; errorMessage = null },
+                    label = { Text("帳號") },
+                    leadingIcon = { Icon(Icons.Default.AccountCircle, null, tint = Color(0xFF673AB7)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -329,7 +332,6 @@ fun LoginDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // 穩定版錯誤訊息（永遠不會出錯）
                 Box(modifier = Modifier.height(40.dp)) {
                     errorMessage?.let {
                         Text(
