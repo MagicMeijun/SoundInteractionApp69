@@ -42,20 +42,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 設定全螢幕模式
         hideSystemUI()
-
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
             if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
                 hideSystemUI()
             }
         }
 
+        // 初始化 SoundManager
         soundManager = SoundManager(this)
 
         setContent {
             SoundInteractionAppTheme {
                 val navController = rememberNavController()
 
+                // 確保離開 App 時釋放音訊資源
                 DisposableEffect(Unit) {
                     onDispose { soundManager.release() }
                 }
@@ -67,7 +69,6 @@ class MainActivity : ComponentActivity() {
                         SplashScreen(navController = navController)
                     }
 
-                    // ✅ 修正：WelcomeScreen 的 onLogout 導航到 Splash
                     composable(Screen.Welcome.route) {
                         WelcomeScreen(
                             onNavigateToFreePlay = { navController.navigate(Screen.FreePlay.route) },
@@ -75,7 +76,6 @@ class MainActivity : ComponentActivity() {
                             onNavigateToGame = { navController.navigate(Screen.Game.route) },
                             onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                             onLogout = {
-                                // ✅ 登出後清空返回堆疊，導航到 Splash（會自動跳轉到登入畫面）
                                 navController.navigate(Screen.Splash.route) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -83,13 +83,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // ✅ 修正：ProfileScreen 的 onNavigateBack 改為回調處理刪除
                     composable(Screen.Profile.route) {
                         ProfileScreen(
                             onNavigateBack = { navController.popBackStack() },
-                            // ✅ 新增：刪除帳號成功後的導航邏輯
                             onAccountDeleted = {
-                                // 清空整個導航堆疊，回到 Splash（會檢測無登入並跳轉到登入畫面）
                                 navController.navigate(Screen.Splash.route) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -97,7 +94,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- 自由探索模式 (Free Play) ---
+                    // --- 自由探索模式 ---
                     composable(Screen.FreePlay.route) {
                         FreePlayScreenContent(
                             onNavigateBack = { navController.popBackStack() },
@@ -111,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- 放鬆模式 (Relax) ---
+                    // --- 放鬆模式 ---
                     composable(Screen.Relax.route) {
                         RelaxScreenContent(
                             onNavigateBack = { navController.popBackStack() },
@@ -122,7 +119,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- 遊戲訓練模式 (Game Mode) ---
+                    // --- 遊戲訓練模式 ---
                     composable(Screen.Game.route) {
                         GameModeScreenContent(
                             onNavigateBack = { navController.popBackStack() },
@@ -130,6 +127,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // Level 1: 太鼓節奏 (已更新)
                     composable(Screen.GameLevel1.route) {
                         Level1FollowBeatScreen(
                             onNavigateBack = { navController.popBackStack() },
@@ -137,6 +135,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // 其他關卡保持不變
                     composable(Screen.GameLevel2.route) {
                         Level2FindAnimalScreen(onNavigateBack = { navController.popBackStack() })
                     }
@@ -147,7 +146,7 @@ class MainActivity : ComponentActivity() {
                         Level4CompositionScreen(onNavigateBack = { navController.popBackStack() })
                     }
 
-                    // --- 個別互動畫面 (Interactions) ---
+                    // --- 個別互動畫面 ---
                     composable(Screen.CatInteraction.route) { CatInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
                     composable(Screen.PianoInteraction.route) { PianoInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
                     composable(Screen.DogInteraction.route) { DogInteractionScreen(onNavigateBack = { navController.popBackStack() }, soundManager = soundManager) }
@@ -162,11 +161,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // --- 實體按鍵監聽 ---
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (event?.repeatCount != 0) {
             return super.onKeyDown(keyCode, event)
         }
 
+        // 攔截音量鍵和其他媒體鍵，轉為遊戲打擊訊號
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -176,7 +177,7 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_CAMERA,
             KeyEvent.KEYCODE_DPAD_CENTER -> {
                 GameInputManager.triggerBeat()
-                return true
+                return true // 阻止系統處理音量變化
             }
         }
 

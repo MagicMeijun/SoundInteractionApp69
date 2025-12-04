@@ -15,76 +15,85 @@ class SoundManager(private val context: Context) {
     private val soundMap = mutableMapOf<String, Int>()
 
     init {
-        // 1. 初始化 SoundPool (設定音效屬性)
+        // 1. 初始化 SoundPool
         val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME) // 設定用途為遊戲
+            .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(5) // 最多同時播放 5 個音效 (避免破音)
+            .setMaxStreams(5)
             .setAudioAttributes(audioAttributes)
             .build()
 
-        // 2. 預先載入音效檔案 (請確保 res/raw 資料夾有這些檔案)
-        // 如果你的檔名不同，請在這裡修改
-        loadSound("perfect", R.raw.sfx_perfect)
-        loadSound("good", R.raw.sfx_good)
-        loadSound("miss", R.raw.sfx_miss)
+        // 2. 預先載入音效 (請確保 res/raw 資料夾有這些檔案)
+        // 如果您的檔名不同，請在這裡修改
+        // 注意：這裡假設您有 sfx_perfect, sfx_good, sfx_miss 這些檔案
+        // 如果沒有，請註解掉以免報錯
+        try {
+            loadSound("perfect", R.raw.sfx_perfect)
+            loadSound("good", R.raw.sfx_good)
+            loadSound("miss", R.raw.sfx_miss)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    /**
-     * 載入音效到記憶體
-     */
     private fun loadSound(key: String, resId: Int) {
-        // priority 設為 1
         soundMap[key] = soundPool.load(context, resId, 1)
     }
 
     /**
-     * 播放短音效 (這就是 Level1Screen 呼叫的函式)
+     * 播放預先載入的短音效 (使用 SoundPool)
+     * 用於遊戲判定 (Perfect, Good, Miss)
      */
     fun playSFX(name: String) {
         val soundId = soundMap[name]
         if (soundId != null && soundId != 0) {
-            // 參數: id, 左聲道, 右聲道, 優先權, 迴圈(0=不迴圈), 速率(1.0=正常)
             soundPool.play(soundId, 1.0f, 1.0f, 1, 0, 1.0f)
         }
     }
 
     /**
      * 播放背景音樂 (BGM)
+     * 專用於遊戲關卡，設定為不循環
      */
     fun playMusic(resId: Int) {
         stopMusic() // 先停止舊的
         mediaPlayer = MediaPlayer.create(context, resId).apply {
-            isLooping = true // 設定循環播放
+            isLooping = false // 節奏遊戲通常不迴圈
             start()
+
+            setOnCompletionListener {
+                it.release()
+                mediaPlayer = null
+            }
         }
     }
 
     fun stopMusic() {
-        mediaPlayer?.stop()
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.stop()
+        }
         mediaPlayer?.release()
         mediaPlayer = null
     }
 
-    /**
-     * 釋放所有資源 (當 App 關閉時呼叫)
-     */
     fun release() {
         stopMusic()
         soundPool.release()
     }
 
+    // ✅ 這就是您缺少的函式：直接用 ID 播放聲音
     fun playSound(resId: Int) {
-        // 建立一個臨時的 MediaPlayer 來播放
-        val mp = MediaPlayer.create(context, resId)
-
-        // 設定監聽器：當音效播放完畢後，立即釋放資源
-        mp.setOnCompletionListener {
-            it.release()
+        try {
+            val mp = MediaPlayer.create(context, resId)
+            mp?.setOnCompletionListener {
+                it.release()
+            }
+            mp?.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        mp.start()
     }
 }

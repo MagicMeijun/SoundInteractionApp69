@@ -25,6 +25,7 @@ firebaseBom = "32.7.0"
 firebaseFirestore = "26.0.2"
 
 materialIconsExtended = "1.6.0"
+firebaseFirestoreVersion = "26.0.2"
 
 
 [libraries]
@@ -71,6 +72,7 @@ coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestoreVersion" }
 
 
 [plugins]

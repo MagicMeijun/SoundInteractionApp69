@@ -84,6 +84,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.firebase.firestore)
 
     // Test
     testImplementation(libs.junit)
