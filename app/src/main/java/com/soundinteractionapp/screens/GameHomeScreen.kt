@@ -6,8 +6,10 @@ import android.media.SoundPool
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -33,7 +35,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset as GeometryOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
 import com.soundinteractionapp.R
 import com.soundinteractionapp.data.AuthViewModel
 import com.soundinteractionapp.data.ProfileViewModel
@@ -107,9 +108,9 @@ fun GameHomeScreen(
     var currentIndex by remember { mutableStateOf(1) }
 
     val modes = listOf(
-        ModeData("自由探索", "模式一", Icons.Default.Search, Color(0xFF8C7AE6), onNavigateToFreePlay),
-        ModeData("放鬆時光", "模式二", Icons.Filled.FavoriteBorder, Color(0xFF4FC3F7), onNavigateToRelax),
-        ModeData("音樂遊戲", "模式三", Icons.Filled.PlayArrow, Color(0xFFFF9800), onNavigateToGame)
+        ModeData("自由探索", "模式一", "自由觸碰螢幕，探索各種聲音與互動", R.drawable.music_01, Color(0xFF8C7AE6), onNavigateToFreePlay),
+        ModeData("放鬆時光", "模式二", "聆聽舒緩音樂，放鬆身心享受時光", R.drawable.music_02, Color(0xFF4FC3F7), onNavigateToRelax),
+        ModeData("音樂遊戲", "模式三", "跟著節奏玩遊戲，訓練反應能力", R.drawable.music_03, Color(0xFFFF9800), onNavigateToGame)
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -211,16 +212,46 @@ fun TopInfoBar(
     var showDropdownMenu by remember { mutableStateOf(false) }
 
     val isAnonymous = authViewModel.isAnonymous()
-    val userProfile by profileViewModel.userProfile.collectAsState()  // ✅ 監聽變化
+    val userProfile by profileViewModel.userProfile.collectAsState()
 
-    // ✅ 每次進入畫面都重新載入資料
-    LaunchedEffect(Unit) {
-        profileViewModel.loadUserProfile()
+    val defaultAvatars = remember {
+        listOf(
+            R.drawable.avatar_01, R.drawable.avatar_02, R.drawable.avatar_03, R.drawable.avatar_04,
+            R.drawable.avatar_05, R.drawable.avatar_06, R.drawable.avatar_07, R.drawable.avatar_08,
+            R.drawable.avatar_09, R.drawable.avatar_10, R.drawable.avatar_11, R.drawable.avatar_12,
+            R.drawable.avatar_13, R.drawable.avatar_14, R.drawable.avatar_15, R.drawable.avatar_16,
+            R.drawable.avatar_17, R.drawable.avatar_18, R.drawable.avatar_19, R.drawable.avatar_20,
+            R.drawable.avatar_21, R.drawable.avatar_22, R.drawable.avatar_23, R.drawable.avatar_24
+        )
     }
+
+    LaunchedEffect(Unit) { profileViewModel.loadUserProfile() }
+
+    // ──────────────── 齒輪旋轉動畫 ────────────────
+    val infiniteTransition = rememberInfiniteTransition(label = "gearRotation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "gearRotate"
+    )
+
+    var clickBoost by remember { mutableStateOf(0f) }
+    val boostRotation by animateFloatAsState(
+        targetValue = clickBoost,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = 300f),
+        finishedListener = { clickBoost = 0f }
+    )
+    // ─────────────────────────────────────────────
 
     Surface(modifier = Modifier.fillMaxWidth(), color = Color.White, shadowElevation = 2.dp) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -231,68 +262,56 @@ fun TopInfoBar(
                 modifier = Modifier.weight(1f)
             )
 
+            // ← 左邊「訪客」按鈕：保留原本的漣漪效果（使用普通 clickable）
             Box {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color(0xFFE8EAF6))
-                        .clickable {
+                        .clickable {                     // ← 這裡保留預設漣漪
                             soundManager.play(R.raw.settings)
                             showDropdownMenu = !showDropdownMenu
                         }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    // 顯示用戶頭像
-                    if (!isAnonymous && userProfile.photoUrl.isNotEmpty()) {
-                        Image(
-                            painter = rememberAsyncImagePainter(userProfile.photoUrl),
-                            contentDescription = "頭像",
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                        )
+                    // 頭像邏輯（不變）
+                    if (isAnonymous) {
+                        Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White).border(1.5.dp, Color(0xFF673AB7), CircleShape), contentAlignment = Alignment.Center) {
+                            Image(painter = painterResource(R.drawable.user), "訪客頭像", Modifier.size(18.dp))
+                        }
+                    } else if (userProfile.photoUrl.isNotEmpty()) {
+                        val avatarResId = userProfile.photoUrl.toIntOrNull()
+                        if (avatarResId != null && defaultAvatars.contains(avatarResId)) {
+                            Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White).border(1.5.dp, Color(0xFF673AB7), CircleShape)) {
+                                Image(painter = painterResource(avatarResId), "頭像", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            }
+                        } else {
+                            Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White).border(1.5.dp, Color(0xFF673AB7), CircleShape), contentAlignment = Alignment.Center) {
+                                Image(painter = painterResource(R.drawable.user), "預設頭像", Modifier.size(18.dp))
+                            }
+                        }
                     } else {
-                        Icon(
-                            Icons.Filled.Person,
-                            if (isAnonymous) "訪客" else "用戶",
-                            tint = Color(0xFF673AB7),
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White).border(1.5.dp, Color(0xFF673AB7), CircleShape), contentAlignment = Alignment.Center) {
+                            Image(painter = painterResource(R.drawable.user), "預設頭像", Modifier.size(18.dp))
+                        }
                     }
 
                     Spacer(Modifier.width(6.dp))
-
-                    // ✅ 顯示最新的暱稱
-                    Text(
-                        text = if (isAnonymous) "訪客" else userProfile.displayName,
-                        fontSize = 14.sp,
-                        color = Color.Black,
-                        maxLines = 1
-                    )
-
+                    Text(text = if (isAnonymous) "訪客" else userProfile.displayName, fontSize = 14.sp, color = Color.Black, maxLines = 1)
                     Icon(
-                        Icons.Filled.ArrowDropDown,
-                        "下拉",
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "下拉",
                         tint = Color.Black,
                         modifier = Modifier.size(20.dp)
                     )
                 }
 
-                DropdownMenu(
-                    expanded = showDropdownMenu,
-                    onDismissRequest = { showDropdownMenu = false },
-                    modifier = Modifier.width(180.dp)
-                ) {
+                DropdownMenu(expanded = showDropdownMenu, onDismissRequest = { showDropdownMenu = false }, modifier = Modifier.width(180.dp)) {
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Filled.Person,
-                                    "個人資料",
-                                    tint = Color(0xFF673AB7),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                Image(painter = painterResource(R.drawable.user), "個人資料", Modifier.size(20.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Text("個人資料", fontSize = 14.sp)
                             }
@@ -303,18 +322,11 @@ fun TopInfoBar(
                             onNavigateToProfile()
                         }
                     )
-
                     Divider(color = Color(0xFFE0E0E0))
-
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Filled.ExitToApp,
-                                    "登出",
-                                    tint = Color(0xFFE57373),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                Image(painter = painterResource(R.drawable.logout), "登出", Modifier.size(20.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Text("登出", fontSize = 14.sp, color = Color(0xFFE57373))
                             }
@@ -329,14 +341,21 @@ fun TopInfoBar(
 
             Spacer(Modifier.width(12.dp))
 
-            Icon(
-                Icons.Filled.Settings,
-                "設定",
-                tint = Color(0xFF673AB7),
+            // ← 右邊齒輪：完全移除漣漪，只保留旋轉動畫
+            Image(
+                painter = painterResource(id = R.drawable.setting),
+                contentDescription = "設定",
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable {
+                    .graphicsLayer {
+                        rotationZ = rotation + boostRotation
+                    }
+                    .clickable(
+                        indication = null,                                     // 關鍵：移除漣漪
+                        interactionSource = remember { MutableInteractionSource() } // 必須搭配這行
+                    ) {
                         soundManager.play(R.raw.settings)
+                        clickBoost += 720f   // 點擊時快速轉兩圈
                     }
             )
         }
@@ -411,6 +430,17 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
     val rotationY = (translationX / 25f).coerceIn(-20f, 20f)
     val alpha = if (offset.absoluteValue > 1) 0f else (1f - offset.absoluteValue * 0.5f)
 
+    val infiniteTransition = rememberInfiniteTransition(label = "bounce")
+    val iconBounce by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (isCenter) -8f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "iconBounce"
+    )
+
     Card(
         modifier = Modifier
             .width(140.dp)
@@ -433,6 +463,9 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
             Box(
                 modifier = Modifier
                     .size(70.dp)
+                    .graphicsLayer {
+                        translationY = iconBounce
+                    }
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
@@ -449,13 +482,29 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
                         .background(mode.color.copy(0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(mode.icon, mode.title, tint = mode.color, modifier = Modifier.size(32.dp))
+                    Image(
+                        painter = painterResource(id = mode.iconResId),
+                        contentDescription = mode.title,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text(mode.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(2.dp))
             Text(mode.subtitle, fontSize = 11.sp, color = mode.color, textAlign = TextAlign.Center)
+
+            Spacer(Modifier.height(6.dp))
+            Text(
+                mode.description,
+                fontSize = 10.sp,
+                color = Color(0xFF999999),
+                textAlign = TextAlign.Center,
+                lineHeight = 14.sp,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             Spacer(Modifier.weight(1f))
 
             Button(
@@ -483,7 +532,8 @@ fun ModeCardSwiper(mode: ModeData, offset: Int, dragOffset: Float, isCenter: Boo
 data class ModeData(
     val title: String,
     val subtitle: String,
-    val icon: ImageVector,
+    val description: String,
+    val iconResId: Int,
     val color: Color,
     val onClick: () -> Unit
 )

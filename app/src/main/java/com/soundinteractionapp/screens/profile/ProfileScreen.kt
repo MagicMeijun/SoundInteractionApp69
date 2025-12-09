@@ -1,17 +1,15 @@
 package com.soundinteractionapp.screens.profile
 
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.util.Base64
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,22 +22,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.soundinteractionapp.R
 import com.soundinteractionapp.data.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
-    onAccountDeleted: () -> Unit = {}, // ✅ 新增：刪除成功的回調
+    onAccountDeleted: () -> Unit = {},
     profileViewModel: ProfileViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -56,14 +56,36 @@ fun ProfileScreen(
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showAvatarPicker by remember { mutableStateOf(false) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            profileViewModel.uploadProfileImage(it, context)
-            Toast.makeText(context, "頭像上傳中...", Toast.LENGTH_SHORT).show()
-        }
+    // 預設頭像列表
+    val defaultAvatars = remember {
+        listOf(
+            R.drawable.avatar_01,
+            R.drawable.avatar_02,
+            R.drawable.avatar_03,
+            R.drawable.avatar_04,
+            R.drawable.avatar_05,
+            R.drawable.avatar_06,
+            R.drawable.avatar_07,
+            R.drawable.avatar_08,
+            R.drawable.avatar_09,
+            R.drawable.avatar_10,
+            R.drawable.avatar_11,
+            R.drawable.avatar_12,
+            R.drawable.avatar_13,
+            R.drawable.avatar_14,
+            R.drawable.avatar_15,
+            R.drawable.avatar_16,
+            R.drawable.avatar_17,
+            R.drawable.avatar_18,
+            R.drawable.avatar_19,
+            R.drawable.avatar_20,
+            R.drawable.avatar_21,
+            R.drawable.avatar_22,
+            R.drawable.avatar_23,
+            R.drawable.avatar_24
+        )
     }
 
     Scaffold(
@@ -120,6 +142,7 @@ fun ProfileScreen(
                 Spacer(Modifier.height(24.dp))
             }
 
+            // 頭像顯示區域
             Box(
                 modifier = Modifier.size(128.dp),
                 contentAlignment = Alignment.Center
@@ -131,21 +154,39 @@ fun ProfileScreen(
                         .background(Color.White)
                         .border(4.dp, Color(0xFF673AB7), CircleShape)
                         .clickable(enabled = !isAnonymous) {
-                            imagePickerLauncher.launch("image/*")
+                            showAvatarPicker = true
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (userProfile.photoUrl.isNotEmpty()) {
-                        Base64Image(
-                            base64String = userProfile.photoUrl,
-                            modifier = Modifier.fillMaxSize()
+                    // 顯示頭像
+                    if (isAnonymous) {
+                        // ✅ 訪客使用 user.png
+                        Image(
+                            painter = painterResource(id = R.drawable.user),
+                            contentDescription = "訪客頭像",
+                            modifier = Modifier.size(60.dp)
                         )
+                    } else if (userProfile.photoUrl.isNotEmpty()) {
+                        val avatarResId = userProfile.photoUrl.toIntOrNull()
+                        if (avatarResId != null && defaultAvatars.contains(avatarResId)) {
+                            Image(
+                                painter = painterResource(id = avatarResId),
+                                contentDescription = "頭像",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.user),
+                                contentDescription = "預設頭像",
+                                modifier = Modifier.size(60.dp)
+                            )
+                        }
                     } else {
-                        Icon(
-                            Icons.Default.Person,
+                        Image(
+                            painter = painterResource(id = R.drawable.user),
                             contentDescription = "預設頭像",
-                            modifier = Modifier.size(60.dp),
-                            tint = Color(0xFF673AB7)
+                            modifier = Modifier.size(60.dp)
                         )
                     }
 
@@ -213,7 +254,6 @@ fun ProfileScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
 
                     if (!isAnonymous) {
-                        // ✅ 1. 帳號（不可編輯）
                         ProfileItem(
                             icon = Icons.Default.AccountCircle,
                             title = "帳號",
@@ -222,7 +262,6 @@ fun ProfileScreen(
                         )
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                        // ✅ 2. 暱稱（可編輯）
                         ProfileItem(
                             icon = Icons.Default.Person,
                             title = "暱稱",
@@ -231,7 +270,6 @@ fun ProfileScreen(
                         )
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                        // ✅ 3. 關於我（可編輯）
                         ProfileItem(
                             icon = Icons.Default.Info,
                             title = "關於我",
@@ -240,7 +278,6 @@ fun ProfileScreen(
                         )
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                        // 4. 變更密碼
                         ProfileItem(
                             icon = Icons.Default.Lock,
                             title = "變更密碼",
@@ -250,7 +287,6 @@ fun ProfileScreen(
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
                     }
 
-                    // 5. 註冊日期
                     ProfileItem(
                         icon = Icons.Default.DateRange,
                         title = "註冊日期",
@@ -290,7 +326,6 @@ fun ProfileScreen(
                 }
             }
 
-            // ✅ 新增：刪除帳號按鈕（只有非訪客才顯示）
             if (!isAnonymous) {
                 Spacer(Modifier.height(32.dp))
 
@@ -317,7 +352,20 @@ fun ProfileScreen(
         }
     }
 
-    // 對話框
+    // 頭像選擇器對話框
+    if (showAvatarPicker) {
+        AvatarPickerDialog(
+            avatars = defaultAvatars,
+            currentAvatarResId = userProfile.photoUrl.toIntOrNull(),
+            onDismiss = { showAvatarPicker = false },
+            onSelect = { selectedResId ->
+                profileViewModel.updateAvatar(selectedResId.toString())
+                showAvatarPicker = false
+                Toast.makeText(context, "頭像已更新", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
     if (showEditDialog) {
         EditNameDialog(
             currentName = userProfile.displayName,
@@ -358,7 +406,6 @@ fun ProfileScreen(
         )
     }
 
-    // ✅ 新增：刪除帳號確認對話框
     if (showDeleteDialog) {
         DeleteAccountDialog(
             onDismiss = { showDeleteDialog = false },
@@ -368,9 +415,8 @@ fun ProfileScreen(
                         showDeleteDialog = false
                         Toast.makeText(context, "帳號已刪除，即將返回登入畫面", Toast.LENGTH_SHORT).show()
 
-                        // ✅ 延遲 500ms 讓用戶看到提示訊息後再導航
                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            onAccountDeleted() // 調用導航回調
+                            onAccountDeleted()
                         }, 500)
                     } else {
                         Toast.makeText(context, error ?: "刪除失敗", Toast.LENGTH_LONG).show()
@@ -381,36 +427,108 @@ fun ProfileScreen(
     }
 }
 
+// 頭像選擇器對話框（完美圓形）
 @Composable
-fun Base64Image(
-    base64String: String,
-    modifier: Modifier = Modifier
+fun AvatarPickerDialog(
+    avatars: List<Int>,
+    currentAvatarResId: Int?,
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit
 ) {
-    val bitmap = remember(base64String) {
-        try {
-            val pureBase64 = base64String.substringAfter("base64,")
-            val decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "選擇頭像",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF673AB7)
+                )
 
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "頭像",
-            modifier = modifier.clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
-    } else {
-        Icon(
-            Icons.Default.Person,
-            contentDescription = "預設頭像",
-            modifier = modifier.size(60.dp),
-            tint = Color(0xFF673AB7)
-        )
+                Spacer(Modifier.height(20.dp))
+
+                // 網格顯示頭像（4 列）
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier.height(300.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(avatars) { avatarResId ->
+                        val isSelected = currentAvatarResId == avatarResId
+
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .aspectRatio(1f)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isSelected) Color(0xFF673AB7).copy(alpha = 0.2f)
+                                        else Color.Transparent
+                                    )
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) Color(0xFF673AB7) else Color.LightGray,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { onSelect(avatarResId) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = avatarResId),
+                                    contentDescription = "頭像選項",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            // 選中狀態的勾勾（完整圓形）
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .align(Alignment.BottomEnd)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF673AB7))
+                                        .border(1.5.dp, Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "已選擇",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("取消", fontSize = 14.sp)
+                }
+            }
+        }
     }
 }
 
@@ -576,7 +694,6 @@ fun ChangePasswordDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> U
     )
 }
 
-// ✅ 新增：刪除帳號對話框
 @Composable
 fun DeleteAccountDialog(
     onDismiss: () -> Unit,
@@ -614,7 +731,6 @@ fun DeleteAccountDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 警告訊息
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -643,7 +759,6 @@ fun DeleteAccountDialog(
                     }
                 }
 
-                // 密碼輸入框
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },

@@ -21,7 +21,7 @@ data class UserProfile(
     val uid: String = "",
     val account: String = "",
     val displayName: String = "使用者",
-    val photoUrl: String = "",
+    val photoUrl: String = "", // ✅ 儲存 Resource ID 的字串
     val bio: String = "",
     val createdAt: String = "",
     val updatedAt: String = "",
@@ -120,6 +120,41 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    // ✅ 新增：更新頭像（儲存 Resource ID）
+    fun updateAvatar(avatarResIdString: String) {
+        if (_isAnonymous.value) return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val user = auth.currentUser ?: return@launch
+
+                // ✅ 儲存頭像 Resource ID 到 Firestore
+                firestore.collection("users").document(user.uid)
+                    .update(
+                        mapOf(
+                            "photoUrl" to avatarResIdString,
+                            "updatedAt" to FieldValue.serverTimestamp()
+                        )
+                    )
+                    .await()
+
+                // ✅ 更新本地狀態
+                _userProfile.value = _userProfile.value.copy(
+                    photoUrl = avatarResIdString,
+                    updatedAt = formatDate(System.currentTimeMillis())
+                )
+
+                println("✅ [更新頭像] 成功: Resource ID = $avatarResIdString")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("❌ [更新頭像] 失敗: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun updateDisplayName(newName: String) {
         if (_isAnonymous.value) return
 
@@ -170,6 +205,7 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    // ✅ 保留舊的上傳方法（如果之後需要）
     fun uploadProfileImage(uri: Uri, context: Context) {
         if (_isAnonymous.value) return
 
@@ -232,7 +268,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== 重新驗證目前密碼 ==========
                 try {
                     println("🔐 [變更密碼] 開始驗證目前密碼...")
                     println("🔐 [變更密碼] 帳號: $account@app.local")
@@ -246,7 +281,6 @@ class ProfileViewModel : ViewModel() {
                     e.printStackTrace()
 
                     val errorMessage = when {
-                        // ✅ Firebase Auth 所有可能的密碼錯誤
                         e.message?.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) == true ||
                                 e.message?.contains("invalid-credential", ignoreCase = true) == true ||
                                 e.message?.contains("auth credential is incorrect", ignoreCase = true) == true ||
@@ -277,7 +311,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== 更新新密碼 ==========
                 try {
                     user.updatePassword(newPassword).await()
                     println("✅ [變更密碼] 密碼更新成功")
@@ -297,7 +330,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== 更新 Firestore 時間戳記 ==========
                 try {
                     firestore.collection("users").document(user.uid)
                         .update("updatedAt", FieldValue.serverTimestamp())
@@ -346,7 +378,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== Step 1: 重新驗證（最重要） ==========
                 try {
                     println("🔐 [刪除帳號] 開始重新驗證用戶...")
                     println("🔐 [刪除帳號] 帳號: $account@app.local")
@@ -362,7 +393,6 @@ class ProfileViewModel : ViewModel() {
                     e.printStackTrace()
 
                     val errorMessage = when {
-                        // ✅ 捕捉所有 Firebase Auth 密碼錯誤的可能情況
                         e.message?.contains("INVALID_LOGIN_CREDENTIALS", ignoreCase = true) == true ||
                                 e.message?.contains("invalid-credential", ignoreCase = true) == true ||
                                 e.message?.contains("auth credential is incorrect", ignoreCase = true) == true ||
@@ -396,7 +426,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== Step 2: 刪除 Firestore 資料（包含重試機制） ==========
                 var firestoreDeleted = false
                 var retryCount = 0
                 val maxRetries = 3
@@ -409,13 +438,11 @@ class ProfileViewModel : ViewModel() {
 
                         val docRef = firestore.collection("users").document(uid)
 
-                        // 先檢查文檔是否存在
                         val docSnapshot = docRef.get().await()
                         if (docSnapshot.exists()) {
                             println("✅ [刪除帳號] 文檔存在，準備刪除")
                             docRef.delete().await()
 
-                            // 驗證刪除成功
                             kotlinx.coroutines.delay(500)
                             val verifyDoc = docRef.get().await()
                             if (!verifyDoc.exists()) {
@@ -437,7 +464,6 @@ class ProfileViewModel : ViewModel() {
                         println("❌ [刪除帳號] 錯誤類型: ${e.javaClass.simpleName}")
                         e.printStackTrace()
 
-                        // 如果是權限問題，不再重試
                         if (e.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true) {
                             _isLoading.value = false
                             onResult(false, "Firestore 權限不足，請聯繫管理員檢查安全規則")
@@ -455,7 +481,6 @@ class ProfileViewModel : ViewModel() {
                     println("⚠️ [刪除帳號] Firestore 資料刪除失敗，但繼續執行 Auth 刪除")
                 }
 
-                // ========== Step 3: 刪除 Storage 頭像 ==========
                 try {
                     storage.reference
                         .child("profile_images/$uid.jpg")
@@ -467,7 +492,6 @@ class ProfileViewModel : ViewModel() {
                     println("⚠️ [刪除帳號] Storage 刪除失敗（可能不存在）: ${e.message}")
                 }
 
-                // ========== Step 4: 刪除 Auth 帳號 ==========
                 try {
                     user.delete().await()
                     println("✅ [刪除帳號] Firebase Auth 帳號刪除成功")
@@ -488,7 +512,6 @@ class ProfileViewModel : ViewModel() {
                     return@launch
                 }
 
-                // ========== Step 5: 清空本地狀態 ==========
                 _userProfile.value = UserProfile()
                 _isAnonymous.value = false
 
