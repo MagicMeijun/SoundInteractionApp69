@@ -36,59 +36,26 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset as GeometryOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.soundinteractionapp.R
+import com.soundinteractionapp.SoundManager
 import com.soundinteractionapp.data.AuthViewModel
 import com.soundinteractionapp.data.ProfileViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 // =====================================================
-// 🎵 音效管理 SoundManager
-// =====================================================
-class SoundManager(context: Context) {
-    private val soundPool: SoundPool
-    private val soundMap = mutableMapOf<Int, Int>()
-
-    init {
-        val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-
-        soundPool = SoundPool.Builder()
-            .setMaxStreams(10)
-            .setAudioAttributes(audioAttributes)
-            .build()
-
-        soundMap[R.raw.settings] = soundPool.load(context, R.raw.settings, 1)
-        soundMap[R.raw.cancel] = soundPool.load(context, R.raw.cancel, 1)
-        soundMap[R.raw.options2] = soundPool.load(context, R.raw.options2, 1)
-    }
-
-    fun play(soundResId: Int) {
-        soundMap[soundResId]?.let { soundId ->
-            soundPool.play(soundId, 1f, 1f, 1, 0, 1f)
-        }
-    }
-
-    fun release() {
-        soundPool.release()
-    }
-}
-
-// =====================================================
 // 🏠 主畫面 GameHomeScreen
 // =====================================================
 @Composable
 fun GameHomeScreen(
+    soundManager: SoundManager,
     onNavigateToFreePlay: () -> Unit,
     onNavigateToRelax: () -> Unit,
     onNavigateToGame: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    val soundManager = remember { SoundManager(context) }
     val isLoggingOut = remember { mutableStateOf(false) }
 
     val blackAlpha by animateFloatAsState(
@@ -101,16 +68,12 @@ fun GameHomeScreen(
         }
     )
 
-    DisposableEffect(Unit) {
-        onDispose { soundManager.release() }
-    }
-
     var currentIndex by remember { mutableStateOf(1) }
 
     val modes = listOf(
-        ModeData("自由探索", "模式一", "自由觸碰螢幕，探索各種聲音與互動", R.drawable.music_01, Color(0xFF8C7AE6), onNavigateToFreePlay),
-        ModeData("放鬆時光", "模式二", "聆聽舒緩音樂，放鬆身心享受時光", R.drawable.music_02, Color(0xFF4FC3F7), onNavigateToRelax),
-        ModeData("音樂遊戲", "模式三", "跟著節奏玩遊戲，訓練反應能力", R.drawable.music_03, Color(0xFFFF9800), onNavigateToGame)
+        ModeData("自由探索", "模式一", "自由觸碰螢幕,探索各種聲音與互動", R.drawable.music_01, Color(0xFF8C7AE6), onNavigateToFreePlay),
+        ModeData("放鬆時光", "模式二", "聆聽舒緩音樂,放鬆身心享受時光", R.drawable.music_02, Color(0xFF4FC3F7), onNavigateToRelax),
+        ModeData("音樂遊戲", "模式三", "跟著節奏玩遊戲,訓練反應能力", R.drawable.music_03, Color(0xFFFF9800), onNavigateToGame)
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -118,8 +81,9 @@ fun GameHomeScreen(
             TopInfoBar(
                 soundManager = soundManager,
                 onNavigateToProfile = onNavigateToProfile,
+                onNavigateToSettings = onNavigateToSettings,
                 onLogoutStart = {
-                    soundManager.play(R.raw.cancel)
+                    soundManager.playSFX("cancel")
                     isLoggingOut.value = true
                 },
                 authViewModel = authViewModel
@@ -205,6 +169,7 @@ fun GameHomeScreen(
 fun TopInfoBar(
     soundManager: SoundManager,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onLogoutStart: () -> Unit,
     authViewModel: AuthViewModel,
     profileViewModel: ProfileViewModel = viewModel()
@@ -262,20 +227,19 @@ fun TopInfoBar(
                 modifier = Modifier.weight(1f)
             )
 
-            // ← 左邊「訪客」按鈕：保留原本的漣漪效果（使用普通 clickable）
             Box {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color(0xFFE8EAF6))
-                        .clickable {                     // ← 這裡保留預設漣漪
-                            soundManager.play(R.raw.settings)
+                        .clickable {
+                            soundManager.playSFX("settings")
                             showDropdownMenu = !showDropdownMenu
                         }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    // 頭像邏輯（不變）
+                    // 頭像邏輯
                     if (isAnonymous) {
                         Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Color.White).border(1.5.dp, Color(0xFF673AB7), CircleShape), contentAlignment = Alignment.Center) {
                             Image(painter = painterResource(R.drawable.user), "訪客頭像", Modifier.size(18.dp))
@@ -317,7 +281,7 @@ fun TopInfoBar(
                             }
                         },
                         onClick = {
-                            soundManager.play(R.raw.settings)
+                            soundManager.playSFX("settings")
                             showDropdownMenu = false
                             onNavigateToProfile()
                         }
@@ -341,7 +305,7 @@ fun TopInfoBar(
 
             Spacer(Modifier.width(12.dp))
 
-            // ← 右邊齒輪：完全移除漣漪，只保留旋轉動畫
+            // ✅ 設定按鈕（齒輪圖示）
             Image(
                 painter = painterResource(id = R.drawable.setting),
                 contentDescription = "設定",
@@ -351,11 +315,12 @@ fun TopInfoBar(
                         rotationZ = rotation + boostRotation
                     }
                     .clickable(
-                        indication = null,                                     // 關鍵：移除漣漪
-                        interactionSource = remember { MutableInteractionSource() } // 必須搭配這行
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        soundManager.play(R.raw.settings)
-                        clickBoost += 720f   // 點擊時快速轉兩圈
+                        soundManager.playSFX("settings")
+                        clickBoost += 720f
+                        onNavigateToSettings()
                     }
             )
         }
@@ -391,11 +356,11 @@ fun SwipeableCardCarousel(
                         if (!isAnimating) {
                             if (offsetX > 80 && currentIndex > 0) {
                                 isAnimating = true
-                                soundManager.play(R.raw.options2)
+                                soundManager.playSFX("options2")
                                 onIndexChange(currentIndex - 1)
                             } else if (offsetX < -80 && currentIndex < modes.size - 1) {
                                 isAnimating = true
-                                soundManager.play(R.raw.options2)
+                                soundManager.playSFX("options2")
                                 onIndexChange(currentIndex + 1)
                             }
                             offsetX = 0f

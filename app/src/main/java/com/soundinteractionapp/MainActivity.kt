@@ -7,8 +7,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.soundinteractionapp.ui.theme.SoundInteractionAppTheme
 import com.soundinteractionapp.utils.GameInputManager
@@ -16,6 +18,7 @@ import com.soundinteractionapp.utils.GameInputManager
 // --- Screens Imports ---
 import com.soundinteractionapp.screens.SplashScreen
 import com.soundinteractionapp.screens.WelcomeScreen
+import com.soundinteractionapp.screens.SettingScreen
 import com.soundinteractionapp.screens.profile.ProfileScreen
 
 // FreePlay Mode Imports
@@ -62,6 +65,50 @@ class MainActivity : ComponentActivity() {
                     onDispose { soundManager.release() }
                 }
 
+                // 監聽當前路由
+                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+                // 根據路由控制 BGM 播放
+                LaunchedEffect(currentRoute) {
+                    when (currentRoute) {
+                        // ✅ Splash 畫面不播放 BGM (LoginScreen 的 BGM 由 WelcomeScreen 控制)
+                        Screen.Splash.route -> {
+                            soundManager.stopBgm()
+                        }
+                        // 關卡中停止 BGM
+                        Screen.GameLevel1.route,
+                        Screen.GameLevel2.route,
+                        Screen.GameLevel3.route,
+                        Screen.GameLevel4.route -> {
+                            soundManager.stopBgm()
+                        }
+                        // 設定頁面播放 BGM
+                        Screen.Settings.route -> {
+                            soundManager.playBgm(R.raw.bgm)
+                        }
+                        // Welcome 的 BGM 由 WelcomeScreen 內部的 LaunchedEffect 控制
+                        // 其他頁面播放 BGM
+                        Screen.FreePlay.route,
+                        Screen.Relax.route,
+                        Screen.Game.route,
+                        Screen.Profile.route -> {
+                            soundManager.playBgm(R.raw.bgm)
+                        }
+                        // 個別互動畫面也播放 BGM
+                        Screen.CatInteraction.route,
+                        Screen.PianoInteraction.route,
+                        Screen.DogInteraction.route,
+                        Screen.BirdInteraction.route,
+                        Screen.DrumInteraction.route,
+                        Screen.BellInteraction.route,
+                        Screen.OceanInteraction.route,
+                        Screen.RainInteraction.route,
+                        Screen.WindInteraction.route -> {
+                            soundManager.playBgm(R.raw.bgm)
+                        }
+                    }
+                }
+
                 NavHost(navController = navController, startDestination = Screen.Splash.route) {
 
                     // --- 啟動與登入流程 ---
@@ -71,10 +118,12 @@ class MainActivity : ComponentActivity() {
 
                     composable(Screen.Welcome.route) {
                         WelcomeScreen(
+                            soundManager = soundManager,
                             onNavigateToFreePlay = { navController.navigate(Screen.FreePlay.route) },
                             onNavigateToRelax = { navController.navigate(Screen.Relax.route) },
                             onNavigateToGame = { navController.navigate(Screen.Game.route) },
                             onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                            onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                             onLogout = {
                                 navController.navigate(Screen.Splash.route) {
                                     popUpTo(0) { inclusive = true }
@@ -91,6 +140,14 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
+                        )
+                    }
+
+                    // ✅ 設定頁面
+                    composable(Screen.Settings.route) {
+                        SettingScreen(
+                            soundManager = soundManager,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
 
@@ -127,7 +184,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Level 1: 太鼓節奏 (已更新)
+                    // Level 1: 太鼓節奏
                     composable(Screen.GameLevel1.route) {
                         Level1FollowBeatScreen(
                             onNavigateBack = { navController.popBackStack() },
@@ -135,7 +192,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // 其他關卡保持不變
+                    // 其他關卡
                     composable(Screen.GameLevel2.route) {
                         Level2FindAnimalScreen(onNavigateBack = { navController.popBackStack() })
                     }
@@ -167,7 +224,7 @@ class MainActivity : ComponentActivity() {
             return super.onKeyDown(keyCode, event)
         }
 
-        // 攔截音量鍵和其他媒體鍵，轉為遊戲打擊訊號
+        // 攔截音量鍵和其他媒體鍵,轉為遊戲打擊訊號
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_VOLUME_DOWN,

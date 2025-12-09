@@ -24,21 +24,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.soundinteractionapp.R
+import com.soundinteractionapp.SoundManager
 import com.soundinteractionapp.data.AuthState
 import com.soundinteractionapp.data.AuthViewModel
 
 @Composable
 fun WelcomeScreen(
+    soundManager: SoundManager,
     onNavigateToFreePlay: () -> Unit,
     onNavigateToRelax: () -> Unit,
     onNavigateToGame: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
     var showRegisterDialog by remember { mutableStateOf(false) }
     var showLoginDialog by remember { mutableStateOf(false) }
+
+    // ✅ 確保 LoginScreen 顯示時停止 BGM
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Authenticated -> {
+                // 已登入,開始播放 BGM
+                soundManager.playBgm(R.raw.bgm)
+            }
+            else -> {
+                // ✅ 未登入時完全停止 BGM
+                soundManager.stopBgm()
+            }
+        }
+    }
 
     when (authState) {
         is AuthState.Loading -> {
@@ -62,10 +80,12 @@ fun WelcomeScreen(
 
         is AuthState.Authenticated -> {
             GameHomeScreen(
+                soundManager = soundManager,
                 onNavigateToFreePlay = onNavigateToFreePlay,
                 onNavigateToRelax = onNavigateToRelax,
                 onNavigateToGame = onNavigateToGame,
                 onNavigateToProfile = onNavigateToProfile,
+                onNavigateToSettings = onNavigateToSettings,
                 onLogout = {
                     authViewModel.signOut()
                     onLogout()
@@ -74,6 +94,7 @@ fun WelcomeScreen(
         }
 
         else -> {
+            // ✅ LoginScreen 不播放 BGM
             LoginScreen(
                 onLoginClick = { showLoginDialog = true },
                 onRegisterClick = { showRegisterDialog = true },
@@ -111,7 +132,7 @@ fun RegisterDialog(
     onDismiss: () -> Unit,
     authViewModel: AuthViewModel
 ) {
-    var account by remember { mutableStateOf("") }  // ✅ 改為帳號
+    var account by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -138,11 +159,10 @@ fun RegisterDialog(
                 Text("註冊新帳號", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673AB7))
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ✅ 帳號輸入（英數混合）
                 OutlinedTextField(
                     value = account,
                     onValueChange = { account = it; errorMessage = null },
-                    label = { Text("帳號（英數混合，至少4字元）") },
+                    label = { Text("帳號(英數混合,至少4字元)") },
                     leadingIcon = { Icon(Icons.Default.AccountCircle, null, tint = Color(0xFF673AB7)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -153,7 +173,7 @@ fun RegisterDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it; errorMessage = null },
-                    label = { Text("密碼（至少6個字元）") },
+                    label = { Text("密碼(至少6個字元)") },
                     leadingIcon = { Icon(Icons.Default.Lock, null, tint = Color(0xFF673AB7)) },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -223,7 +243,7 @@ fun RegisterDialog(
                                     errorMessage = null
                                     authViewModel.signUp(account, password) { success, err ->
                                         isLoading = false
-                                        if (!success) errorMessage = err ?: "註冊失敗，請稍後再試"
+                                        if (!success) errorMessage = err ?: "註冊失敗,請稍後再試"
                                         else onDismiss()
                                     }
                                 }
@@ -251,7 +271,7 @@ fun LoginDialog(
     onDismiss: () -> Unit,
     authViewModel: AuthViewModel
 ) {
-    var account by remember { mutableStateOf("") }  // ✅ 改為帳號
+    var account by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -272,8 +292,8 @@ fun LoginDialog(
                                 error?.contains("wrong-password", true) == true -> "密碼錯誤"
                                 error?.contains("user-not-found", true) == true -> "此帳號尚未註冊"
                                 error?.contains("invalid-credential", true) == true -> "帳號或密碼錯誤"
-                                error?.contains("network", true) == true -> "網路異常，請檢查連線"
-                                else -> "登入失敗，請再試一次"
+                                error?.contains("network", true) == true -> "網路異常,請檢查連線"
+                                else -> "登入失敗,請再試一次"
                             }
                         } else {
                             onDismiss()
@@ -303,7 +323,6 @@ fun LoginDialog(
                 Text("登入帳號", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673AB7))
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ✅ 帳號輸入
                 OutlinedTextField(
                     value = account,
                     onValueChange = { account = it; errorMessage = null },

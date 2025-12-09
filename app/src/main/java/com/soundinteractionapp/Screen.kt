@@ -8,6 +8,7 @@ sealed class Screen(val route: String) {
     object GameHome : Screen("game_home")
     object Welcome : Screen("welcome")
     object Profile : Screen("profile")
+    object Settings : Screen("settings")  // ✅ 新增：設定頁面
     object FreePlay : Screen("freeplay")
     object Relax : Screen("relax")
     object Game : Screen("game")
