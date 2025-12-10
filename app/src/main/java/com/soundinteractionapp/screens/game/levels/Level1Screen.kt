@@ -12,8 +12,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.soundinteractionapp.R
@@ -24,7 +22,12 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.withFrameMillis
+import com.soundinteractionapp.data.RankingViewModel
 import kotlin.math.abs
+
+////////////////////////新增////////////////////////
+
+////////////////////////新增////////////////////////
 
 // ----------------------------------------------------------------------
 // 1. 資料結構與狀態
@@ -126,7 +129,8 @@ val CANON_CHART = listOf(
 @Composable
 fun Level1FollowBeatScreen(
     onNavigateBack: () -> Unit,
-    soundManager: SoundManager
+    soundManager: SoundManager,
+    rankingViewModel: RankingViewModel
 ) {
     // --- 參數設定 ---
     val noteSpeed = 0.4f
@@ -188,6 +192,8 @@ fun Level1FollowBeatScreen(
         soundManager.playMusic(R.raw.canon)
         startTime = System.currentTimeMillis()
 
+        val lastNoteTime = totalNotes.last().targetTime
+
         while (gameState == GameState.PLAYING && isActive) {
             currentTime = System.currentTimeMillis() - startTime
 
@@ -203,6 +209,13 @@ fun Level1FollowBeatScreen(
                     trackBorderColor = Color.Red
                 }
             }
+            ////////////////////////新增////////////////////////
+            if (currentTime > lastNoteTime + 1500) {
+                gameState = GameState.FINISHED
+                soundManager.stopMusic()
+            }
+            ////////////////////////新增////////////////////////
+
             withFrameMillis { }
         }
     }
@@ -253,6 +266,20 @@ fun Level1FollowBeatScreen(
             }
         }
     }
+    ////////////////////////新增////////////////////////
+// 【新增】監聽遊戲狀態，處理結束時的邏輯
+    LaunchedEffect(gameState) {
+        if (gameState == GameState.FINISHED) {
+            feedbackText = "遊戲結束！"
+            // 提交最終分數
+            rankingViewModel.onGameFinished(levelId = 1, finalScore = score)
+
+            // 顯示結果 3 秒後自動返回
+            delay(3000)
+            onNavigateBack()
+        }
+    }
+    ////////////////////////新增////////////////////////
 
     // --- 畫面繪製 ---
     Surface(
@@ -364,6 +391,9 @@ fun Level1FollowBeatScreen(
             Button(
                 onClick = {
                     soundManager.stopMusic()
+                    ////////////////////////新增////////////////////////
+                    rankingViewModel.onGameFinished(levelId = 1, finalScore = score)
+                    ////////////////////////新增////////////////////////
                     onNavigateBack()
                 },
                 modifier = Modifier.align(Alignment.TopStart).padding(16.dp)

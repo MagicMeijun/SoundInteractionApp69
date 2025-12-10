@@ -39,15 +39,32 @@ import com.soundinteractionapp.screens.game.levels.Level3PitchScreen
 import com.soundinteractionapp.screens.game.levels.Level4CompositionScreen
 
 ////////////////////////新增////////////////////////
-import com.soundinteractionapp.screens.game.GameModeScreenContent
-import com.soundinteractionapp.screens.game.levels.Level1FollowBeatScreen
 // 【確認此行或類似的 Import 存在】
-import com.soundinteractionapp.screens.game.levels.Level2FindAnimalScreen
+import androidx.activity.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.soundinteractionapp.data.RankingRepository
+import com.soundinteractionapp.data.RankingViewModel
+
 ////////////////////////新增////////////////////////
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var soundManager: SoundManager
+
+    private val rankingRepository = RankingRepository()
+
+    private val rankingViewModel by viewModels<RankingViewModel> {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(RankingViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return RankingViewModel(rankingRepository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -189,6 +206,11 @@ class MainActivity : ComponentActivity() {
                         GameModeScreenContent(
                             onNavigateBack = { navController.popBackStack() },
                             onNavigateToLevel = { route -> navController.navigate(route) },
+
+                            ////////////////////////新增////////////////////////
+                            rankingViewModel = rankingViewModel
+                            ////////////////////////新增////////////////////////
+
                         )
                     }
 
@@ -196,7 +218,8 @@ class MainActivity : ComponentActivity() {
                     composable(Screen.GameLevel1.route) {
                         Level1FollowBeatScreen(
                             onNavigateBack = { navController.popBackStack() },
-                            soundManager = soundManager
+                            soundManager = soundManager,
+                            rankingViewModel = rankingViewModel
                         )
                     }
 
@@ -225,6 +248,8 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+
 
     // --- 實體按鍵監聽 ---
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

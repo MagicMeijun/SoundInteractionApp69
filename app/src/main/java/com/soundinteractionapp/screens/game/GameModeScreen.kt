@@ -25,9 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.soundinteractionapp.R
 import com.soundinteractionapp.Screen
@@ -35,6 +33,7 @@ import kotlin.math.absoluteValue
 ////////////////////////新增////////////////////////
 import androidx.compose.material.icons.filled.EmojiEvents // 獎盃圖示
 import androidx.compose.ui.window.Dialog
+import com.soundinteractionapp.data.RankingViewModel
 import com.soundinteractionapp.screens.game.levels.RankingDialogContent
 
 ////////////////////////新增////////////////////////
@@ -89,7 +88,7 @@ data class LevelData(
 // 🎮 遊戲訓練模式主畫面 (Vertical Carousel 版本)
 // =====================================================
 @Composable
-fun GameModeScreenContent(onNavigateBack: () -> Unit, onNavigateToLevel: (String) -> Unit) {
+fun GameModeScreenContent(onNavigateBack: () -> Unit, onNavigateToLevel: (String) -> Unit,rankingViewModel: RankingViewModel) {
     val context = LocalContext.current
     // 初始化音效管理器
     val soundManager = remember { GameModeSoundManager(context) }
@@ -188,7 +187,8 @@ fun GameModeScreenContent(onNavigateBack: () -> Unit, onNavigateToLevel: (String
                     Dialog(onDismissRequest = { showRankingDialog = false }) {
                         // 呼叫排名內容畫面，並傳遞關閉視窗的動作
                         RankingDialogContent(
-                            onClose = { showRankingDialog = false } // 傳遞關閉自身的操作
+                            onClose = { showRankingDialog = false }, // 傳遞關閉自身的操作
+                            rankingViewModel = rankingViewModel
                         )
                     }
                 }
