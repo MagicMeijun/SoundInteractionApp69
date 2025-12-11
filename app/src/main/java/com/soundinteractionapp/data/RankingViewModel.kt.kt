@@ -6,6 +6,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
+//////////////////////////////////////////////////////////
+////////////////////////新增此資料檔////////////////////////
+//////////////////////////////////////////////////////////
+
 // ⚠️ 注意：為了讓所有 Composable 共享同一個實例，
 // 我們需要確保這個 ViewModel 在 App 級別被提供，
 // 或者使用 Hilt/Koin 等依賴注入框架。
